@@ -1,6 +1,6 @@
 # HTML API
 
-This package helps you creating a nice and clean [dataset](https://developer.mozilla.org/docs/Web/API/HTMLElement/dataset)-based options API.
+This package helps you creating a nice and clean [dataset](https://developer.mozilla.org/docs/Web/API/HTMLElement/dataset)-based options [HTML API](https://www.smashingmagazine.com/2017/02/designing-html-apis/).
 
 It preserves the convenience of a JavaScript-based options interface while removing the hurdle of adding server-generated configuration `<script>` blocks to your markup.
 
@@ -18,7 +18,9 @@ The goal of this package is to provide an easy interface for HTML-configurable c
 Imagine an accordion widget.
 
 ```html
-<section class="accordion">...</section>
+<section class="accordion">
+...
+</section>
 ```
 
 You would typically have an additional inline script block defining the options of the widget. This is however unconvenient to write on the server side, obstrusive to read and hard or even impossible to change on the client side.
@@ -38,7 +40,9 @@ const api = htmlApi(document.querySelector('.accordion'), {
 to make the accordion widget configurable like this:
 
 ```html
-<section class="accordion" data-swipe-time="0.5" data-multiple>...</section>
+<section class="accordion" data-swipe-time="0.5" data-multiple>
+...
+</section>
 ```
 
 These options are now easily accessible and adjustable as well in the HTML (see above) as in the JavaScript via
@@ -105,12 +109,14 @@ Once you have somehow obtained the `htmlApi` function, you can use it to define 
 The simplest possible example
 
 ```javascript
-// This defines an HTML API with only a `label` option which must be a string (or `null` if not set)
+// This defines an HTML API with only a `label` option which must
+// be a string (or `null` if not set)
 const api = htmlApi(btn, {
   label: String
 })
 
-// Sets the button's inner text to the `label` option which is read from the `data-label` attribute
+// Sets the button's inner text to the `label` option which is read
+// from the `data-label` attribute
 btn.textContent = api.options.label
 
 // Attaches a listener to the `label` option
@@ -186,8 +192,9 @@ where
       // Converts a value of the defined Type into a string
       serialize (value: Type): string
 
-      // The inverse of `serialize`: Converts a string back to the defined Type
-      // If the string does not belong to the Type, this method should throw an Error
+      // The inverse of `serialize`: Converts a string back to the
+      // defined Type. If the string does not belong to the Type
+      // this method should throw an Error.
       unserialize (serializedValue: string): Type
     }
     ```
@@ -207,9 +214,10 @@ where
     // If not set or set to `false`, the `default` option is required
     required?: boolean,
 
-    // A default value, applying when the according data-* attribute is not set
-    // If set, the option must not be `required`
-    // Mandatory if option is not `required` and the `type` is not an array including `null`
+    // A default value, applying when the according data-* attribute
+    // is not set. If set, the option must not be `required`.
+    // It's mandatory if option is not `required` and the `type` is
+    // not an array including `null`.
     default?: any
   }
   ```
@@ -217,7 +225,7 @@ where
 Some hints about using the above:
 
 * If the `opts` argument is a `TypeConstraint` (without any additional details), it will always be nullable.
-* Be careful when using Union types, especially with `String`.
+* Be careful when using union types, especially with `String`.
 
   If you define an option like the following:
 
