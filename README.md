@@ -98,7 +98,7 @@ api.onChange.myOption = (value, oldValue) => {
 }
 ```
 
-As a side not: The above is just syntactic sugar for the more generic event system:
+As a side note: The above is just syntactic sugar for the more generic event system:
 
 ```javascript
 api.on('change', (event) => {
