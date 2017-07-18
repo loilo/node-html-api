@@ -11,6 +11,43 @@ This package features
 * an event emitter, notifying about option changes
 * decent presets and extensibility for type checking and casting
 
+## Motivation
+
+The goal of this package is to provide an easy interface for HTML-configurable component-like entities.
+
+Imagine an accordion widget.
+
+```html
+<section class="accordion">...</section>
+```
+
+You would typically have an additional inline script block defining the options of the widget. This is however unconvenient to write on the server side, obstrusive to read and hard or even impossible to change on the client side.
+
+With this package, you can use this little snippet
+
+```javascript
+const api = htmlApi(document.querySelector('.accordion'), {
+  swipeTime: {
+    type: Number,
+    default: 0.8
+  },
+  multiple: Boolean
+})
+```
+
+to make the accordion widget configurable like this:
+
+```html
+<section class="accordion" data-swipe-time="0.5" data-multiple>...</section>
+```
+
+These options are now easily accessible and adjustable as well in the HTML (see above) as in the JavaScript via
+
+```javascript
+api.options.swipeTime // 0.5
+api.options.multiple // true
+```
+
 ## Installation
 
 Install it from npm:
