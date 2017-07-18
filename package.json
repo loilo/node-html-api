@@ -1,6 +1,6 @@
 {
   "name": "@loilo/html-api",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Makes creating an HTML API a breeze",
   "main": "dist/cjs.es2015.js",
   "devDependencies": {
