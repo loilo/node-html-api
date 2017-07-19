@@ -8,11 +8,12 @@ It preserves the convenience of a JavaScript-based options interface while remov
 
 This package features
 
-* a hybrid API interface, allowing to change options programmatically as well as by changing `data-*` attributes
-* automatic syncing between those configuration locations via a [MutationObserver](https://developer.mozilla.org/de/docs/Web/API/MutationObserver)
+* a hybrid API interface, allowing to change option values programmatically as well as by changing `data-*` attributes
+* automatic syncing between those endpoints via a [MutationObserver](https://developer.mozilla.org/de/docs/Web/API/MutationObserver)
 * an event emitter, notifying about option changes
 * decent presets and extensibility for type checking and casting
-* a reasonably small file size: it's 2.7 KB minified & gzipped
+* support for all modern browsers down to IE 11
+* reasonable size: it's just 2.7 KB minified & gzipped
 
 ---
 
