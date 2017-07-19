@@ -240,6 +240,19 @@ Some hints about using the above:
   }
   ```
 
-  then any numeric value, being a string or not (like in `api.options.myOption = "5"`) will be evaluated as a number since there's no way for the API to recognize what type there was before serialization. This is because the serialized `Number` type is more narrow than the serialized `String` type and will thus be checked first.
+  you should be aware that the number `5` and the string `"5"` do serialize to the same value (which is `"5"`).
 
-  This should mostly be a non-issue, but is definitely to be told.
+  Consequently, if you set your option to a numeric string (like in `api.options.myOption = "5"`), it will still be unserialized as the number `5`.
+
+  Generally, serialized options are evaluated from the most narrow type to the widest type (i.e. all serialized numbers are also serialized strings, but not all serialized strings are also numbers). This means, the attempt to unserialize a stringified option will go the following route:
+
+  1. Any custom type constraint
+  2. `null`
+  3. `Boolean`
+  4. `Number`
+  5. `Array`
+  6. `Object`
+  7. `Function`
+  8. `String`
+
+  Of course, only the constraints that are given in the option's definition will be considered.
