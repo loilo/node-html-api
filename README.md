@@ -26,15 +26,6 @@ This package features
 * [Usage](#usage)
   * [Type constraints](#type-constraints)
     * [Basic constraints](#basic-constraints)
-      * [`null`](#null)
-      * [`Boolean`](#boolean)
-      * [`Number`](#number)
-      * [`Array`](#array)
-      * [`Object`](#object)
-      * [`Function`](#function)
-      * [`htmlApi.Enum(string1, string2, string3, ...)`](#htmlapienumstring1-string2-string3-)
-      * [`htmlApi.Integer`](#htmlapiinteger)
-      * [`htmlApi.Float`](#htmlapifloat)
     * [Union constraints](#union-constraints)
     * [Custom constraints](#custom-constraints)
   * [Provide default values](#provide-default-values)
@@ -179,7 +170,7 @@ One of the core features of this package is type casting—serializing options o
 
 You could define an option called `myOption` with the following types:
 
-* ##### `null`
+* **`null`**
 
   > Enforces a value set through `api.options.myOption` to be...
 
@@ -191,7 +182,7 @@ You could define an option called `myOption` with the following types:
 
   Note that *all* type constraints will be considered nullable if neither the definition marks the option as [required](#require-option-attributes) nor it provides a [default value](#provide-default-values).
 
-* ##### `Boolean`
+* **`Boolean`**
 
   > Enforces a value set through `api.options.myOption` to be...
 
@@ -205,7 +196,7 @@ You could define an option called `myOption` with the following types:
   * `"false"` and the absence of the attribute will evaluate to `false`
 
 
-* ##### `Number`
+* **`Number`**
 
   > Enforces a value set through `api.options.myOption` to be...
 
@@ -216,7 +207,7 @@ You could define an option called `myOption` with the following types:
   calling `+value`, which will cast a numeric string to an actual number.
 
 
-* ##### `Array`
+* **`Array`**
 
   > Enforces a value set through `api.options.myOption` to be...
 
@@ -227,7 +218,7 @@ You could define an option called `myOption` with the following types:
   parsing it as JSON
 
 
-* ##### `Object`
+* **`Object`**
 
   > Enforces a value set through `api.options.myOption` to be...
 
@@ -238,7 +229,7 @@ You could define an option called `myOption` with the following types:
   parsing it as JSON
 
 
-* ##### `Function`
+* **`Function`**
 
   > Enforces a value set through `api.options.myOption` to be...
 
@@ -253,14 +244,14 @@ You could define an option called `myOption` with the following types:
   Be aware that because `eval` changes pretty much the whole environment of your function, you should only use functions that do not rely on anything but their respective arguments.
 
 
-* ##### `htmlApi.Enum(string1, string2, string3, ...)`
+* **`htmlApi.Enum(string1, string2, string3, ...)`**
 
   > Enforces a value set through `api.options.myOption` to be...
 
   a string, and as such, one of the provided parameters
 
 
-* ##### `htmlApi.Integer`
+* **`htmlApi.Integer`**
 
   > Enforces a value set through `api.options.myOption` to be...
 
@@ -273,7 +264,7 @@ You could define an option called `myOption` with the following types:
   * `htmlApi.Integer.min(lowerBound).max(upperBound)`
 
 
-* ##### `htmlApi.Float`
+* **`htmlApi.Float`**
 
   > Enforces a value set through `api.options.myOption` to be...
 
