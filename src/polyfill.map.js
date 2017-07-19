@@ -56,7 +56,7 @@ if (!window.Map || !window.Map.prototype.entries) {
     return this
   }
 
-  Map.prototype['delete'] = function (key) {
+  Map.prototype.delete = function (key) {
     var index = this._keys.indexOf(key)
     if (index === -1) {
       return false

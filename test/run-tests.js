@@ -98,22 +98,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   })
 
-  addTest('configuration-no-require-nor-default', 'Configuration should fail with none of `required` or `default` set', function (done) {
-    var element = document.createElement('button')
-    try {
-      var api = htmlApi(element, {
-        label: {
-          type: String
-        }
-      })
-
-      done(false)
-      api.destroy()
-    } catch (err) {
-      done(true)
-    }
-  })
-
   addTest('configuration-no-require-nor-default-nullable', 'Configuration should pass with type constraint `null` and none of `required` or `default` set', function (done) {
     var element = document.createElement('button')
     try {
@@ -127,23 +111,6 @@ document.addEventListener('DOMContentLoaded', function () {
       api.destroy()
     } catch (err) {
       done(false, err)
-    }
-  })
-
-  addTest('configuration-require-false-no-default', 'Configuration should fail with no `default` and `required` set to `false`', function (done) {
-    var element = document.createElement('button')
-    try {
-      var api = htmlApi(element, {
-        label: {
-          type: String,
-          required: false
-        }
-      })
-
-      done(false)
-      api.destroy()
-    } catch (err) {
-      done(true)
     }
   })
 

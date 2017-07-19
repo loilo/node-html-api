@@ -119,7 +119,7 @@ const presetTypes = new Map([
   }],
   [ Number, {
     validate: value => typeof value === 'number' && !isNaN(value),
-    serialize: value => JSON.stringify(value),
+    serialize: number => String(number),
     unserialize: value => +value
   }],
   [ Array, {
@@ -273,13 +273,17 @@ function validateOptionDefinition (optionDef) {
       throw new Error('Option can either be required or have a default value, not both')
     }
 
-    // Not required, no default and not null
+    // Not required, no default and not null -> make it nullable
     if (
       !optionDef.required &&
       isUndef(optionDef.default) &&
       !(optionDef.type === null || (Array.isArray(optionDef.type) && has(optionDef.type, null)))
     ) {
-      throw new Error('An option must either be required, have a default value or include a `null` type')
+      if (Array.isArray(optionDef.type)) {
+        optionDef.type.push(null)
+      } else {
+        optionDef.type = [ optionDef.type, null ]
+      }
     }
 
     // Default value is not valid
@@ -513,13 +517,16 @@ function observeElement (element, attributes, callback) {
   // create an observer instance
   const observer = new window.MutationObserver(records => {
     for (const record of records) {
-      if (record.type === 'attributes' && has(attributes, record.attributeName)) {
+      if (record.type === 'attributes') {
         callback(record.attributeName.slice(5), record.oldValue)
       }
     }
   })
 
-  observer.observe(element, { attributes: true })
+  observer.observe(element, {
+    attributes: true,
+    attributeFilter: attributes
+  })
 
   return observer
 }
@@ -630,7 +637,7 @@ export default function htmlApi (element, optionsDef) {
     },
 
     /**
-     * Merges a new options definition in
+     * Merges in a new options definition
      *
      * @param {Object} newOptionsDef
      */
@@ -651,6 +658,8 @@ export default function htmlApi (element, optionsDef) {
       // Restart MutationObserver
       observer.disconnect()
       observer = createElementObserver(element, optionsDef, values, emitter)
+
+      return this
     },
 
     /**
@@ -661,3 +670,35 @@ export default function htmlApi (element, optionsDef) {
     }
   }
 }
+
+htmlApi.Enum = (...values) => ({
+  validate: value => typeof value === 'string' && has(values, value),
+  serialize: value => value,
+  unserialize: value => value
+})
+
+const numGen = (min = -Infinity, max = Infinity, float = true) => ({
+  validate: value => (
+      float ||
+      Number.isInteger
+        ? Number.isInteger(value)
+        : (typeof value === 'number' && isFinite(value) && Math.floor(value) === value)
+    ) &&
+    value >= min && value <= max,
+  serialize: value => String(value),
+  unserialize: value => +value
+})
+
+htmlApi.Integer = Object.assign(numGen(-Infinity, Infinity, false), {
+  min: min => Object.assign(numGen(min, Infinity, false), {
+    max: max => numGen(min, max, false)
+  }),
+  max: max => numGen(-Infinity, max, false)
+})
+
+htmlApi.Float = Object.assign(numGen(-Infinity, Infinity), {
+  min: min => Object.assign(numGen(min, Infinity), {
+    max: max => numGen(min, max)
+  }),
+  max: max => numGen(-Infinity, max)
+})

@@ -59,7 +59,7 @@ if (!window.Map || !window.Map.prototype.entries) {
     return this
   };
 
-  Map.prototype['delete'] = function (key) {
+  Map.prototype.delete = function (key) {
     var index = this._keys.indexOf(key);
     if (index === -1) {
       return false
@@ -213,7 +213,7 @@ var presetTypes = new Map([
   }],
   [ Number, {
     validate: function (value) { return typeof value === 'number' && !isNaN(value); },
-    serialize: function (value) { return JSON.stringify(value); },
+    serialize: function (number) { return String(number); },
     unserialize: function (value) { return +value; }
   }],
   [ Array, {
@@ -366,13 +366,17 @@ function validateOptionDefinition (optionDef) {
       throw new Error('Option can either be required or have a default value, not both')
     }
 
-    // Not required, no default and not null
+    // Not required, no default and not null -> make it nullable
     if (
       !optionDef.required &&
       isUndef(optionDef.default) &&
       !(optionDef.type === null || (Array.isArray(optionDef.type) && has(optionDef.type, null)))
     ) {
-      throw new Error('An option must either be required, have a default value or include a `null` type')
+      if (Array.isArray(optionDef.type)) {
+        optionDef.type.push(null);
+      } else {
+        optionDef.type = [ optionDef.type, null ];
+      }
     }
 
     // Default value is not valid
@@ -626,13 +630,16 @@ function observeElement (element, attributes, callback) {
     for (var i = 0, list = records; i < list.length; i += 1) {
       var record = list[i];
 
-      if (record.type === 'attributes' && has(attributes, record.attributeName)) {
+      if (record.type === 'attributes') {
         callback(record.attributeName.slice(5), record.oldValue);
       }
     }
   });
 
-  observer.observe(element, { attributes: true });
+  observer.observe(element, {
+    attributes: true,
+    attributeFilter: attributes
+  });
 
   return observer
 }
@@ -747,7 +754,7 @@ function htmlApi (element, optionsDef) {
     },
 
     /**
-     * Merges a new options definition in
+     * Merges in a new options definition
      *
      * @param {Object} newOptionsDef
      */
@@ -768,6 +775,8 @@ function htmlApi (element, optionsDef) {
       // Restart MutationObserver
       observer.disconnect();
       observer = createElementObserver(element, optionsDef, values, emitter);
+
+      return this
     },
 
     /**
@@ -778,6 +787,49 @@ function htmlApi (element, optionsDef) {
     }
   }
 }
+
+htmlApi.Enum = function () {
+  var values = [], len = arguments.length;
+  while ( len-- ) values[ len ] = arguments[ len ];
+
+  return ({
+  validate: function (value) { return typeof value === 'string' && has(values, value); },
+  serialize: function (value) { return value; },
+  unserialize: function (value) { return value; }
+});
+};
+
+var numGen = function (min, max, float) {
+  if ( min === void 0 ) min = -Infinity;
+  if ( max === void 0 ) max = Infinity;
+  if ( float === void 0 ) float = true;
+
+  return ({
+  validate: function (value) { return (
+      float ||
+      Number.isInteger
+        ? Number.isInteger(value)
+        : (typeof value === 'number' && isFinite(value) && Math.floor(value) === value)
+    ) &&
+    value >= min && value <= max; },
+  serialize: function (value) { return String(value); },
+  unserialize: function (value) { return +value; }
+});
+};
+
+htmlApi.Integer = Object.assign(numGen(-Infinity, Infinity, false), {
+  min: function (min) { return Object.assign(numGen(min, Infinity, false), {
+    max: function (max) { return numGen(min, max, false); }
+  }); },
+  max: function (max) { return numGen(-Infinity, max, false); }
+});
+
+htmlApi.Float = Object.assign(numGen(-Infinity, Infinity), {
+  min: function (min) { return Object.assign(numGen(min, Infinity), {
+    max: function (max) { return numGen(min, max); }
+  }); },
+  max: function (max) { return numGen(-Infinity, max); }
+});
 
 return htmlApi;
 
