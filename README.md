@@ -1,5 +1,7 @@
 # HTML API
 
+> This package is still under very early development, be careful if you want to use it.
+
 This package helps you creating a nice and clean [dataset](https://developer.mozilla.org/docs/Web/API/HTMLElement/dataset)-based options [HTML API](https://www.smashingmagazine.com/2017/02/designing-html-apis/).
 
 It preserves the convenience of a JavaScript-based options interface while removing the hurdle of adding server-generated configuration `<script>` blocks to your markup.
@@ -208,7 +210,9 @@ where
   ```typescript
   interface OptionsDefinition {
     // A type constraint as defined above
-    type?: TypeConstraint,
+    // This *must* be set, otherwise the package will not know how
+    // to serialize and unserialize option values.
+    type: TypeConstraint,
 
     // If the data-* attribute belonging to this option must be set
     // If not set or set to `false`, the `default` option is required
@@ -236,6 +240,6 @@ Some hints about using the above:
   }
   ```
 
-  then any numeric value, being a string or not (like in `api.options.myOption = "5"`) will be evaluated as a number since there's no way for the API to recognize what type there was before serialization.
+  then any numeric value, being a string or not (like in `api.options.myOption = "5"`) will be evaluated as a number since there's no way for the API to recognize what type there was before serialization. This is because the serialized `Number` type is more narrow than the serialized `String` type and will thus be checked first.
 
   This should mostly be a non-issue, but is definitely to be told.

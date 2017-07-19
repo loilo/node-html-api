@@ -14,7 +14,7 @@
     "test": "standard",
     "prepublish": "npm run build",
     "build-prepare": "make-dir dist",
-    "build-polyfilled": "node build/merge --sep-newline src/polyfill.map.js src/html-api.js > tmp-polyfilled.js",
+    "build-polyfilled": "node build/merge --sep-newline src/polyfill.map.js src/polyfill.array.js src/html-api.js > tmp-polyfilled.js",
     "build-es5": "buble src/html-api.js --yes dangerousForOf --no modules > tmp-transpiled.js",
     "build-es5-full": "buble tmp-polyfilled.js --yes dangerousForOf --no modules > tmp-transpiled-full.js",
     "build-browser-es5": "rollup -c build/config.rollup.browser.es5.js | uglifyjs --compress --mangle > dist/browser.min.js",
@@ -42,7 +42,8 @@
   "standard": {
     "ignore": [
       "dist/",
-      "build/"
+      "build/",
+      "test/"
     ]
   },
   "publishConfig": {

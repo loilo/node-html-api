@@ -59,7 +59,7 @@ if (!window.Map || !window.Map.prototype.entries) {
     return this
   };
 
-  Map.prototype.delete = function (key) {
+  Map.prototype['delete'] = function (key) {
     var index = this._keys.indexOf(key);
     if (index === -1) {
       return false
@@ -84,6 +84,12 @@ if (!window.Map || !window.Map.prototype.entries) {
   };
 } else {
   Map = window.Map;
+}
+
+if (!Array.isArray) {
+  Array.isArray = function (vArg) {
+    return Object.prototype.toString.call(vArg) === '[object Array]'
+  };
 }
 
 // Mitt
@@ -130,6 +136,58 @@ function mitt (all) {
       (all['*'] || []).map(function (handler) { handler(type, evt); });
     }
   }
+}
+
+/**
+ * Use this instead of Object.entries() for compatibility
+ *
+ * @param {Object} obj
+ */
+function entries (obj) {
+  return Object.keys(obj).map(function (key) { return [ key, obj[key] ]; })
+}
+
+/**
+ * Use this instead of Array.prototype.includes() for compatibility
+ *
+ * @param {Array} arr
+ * @param {Any} value
+ */
+function has (array, value) {
+  return array.includes
+    ? array.includes(value)
+    : array.indexOf(value) !== -1
+}
+
+/**
+ * Use this instead of Array.prototype.find() for compatibility
+ *
+ * @param {Array} arr
+ * @param {Function} callback
+ */
+function find (array, callback) {
+  if (array.find) { return array.find(callback) }
+  for (var i = 0; i < array.length; i++) {
+    if (callback(array[i], i, array)) { return array[i] }
+  }
+  return undefined
+}
+
+/**
+ * Use this instead of Array.from() for compatibility
+ *
+ * @param {Object} obj
+ */
+function arrayFrom (obj) {
+  if (Array.from) { return Array.from(obj) }
+  if (Array.isArray(obj)) { return obj.slice(0) }
+
+  // If Array.from is not defined, we can safely assume that we use
+  // our own Map implementation and therefore the following is fine.
+  var items = [];
+  for (var i = 0; i < obj.length; i++) { items.push(obj[i]); }
+
+  return items
 }
 
 // A Map of predefined types, in descending specificity order
@@ -209,7 +267,7 @@ function isCustomTypeConstraint (value) {
  * @return {Boolean}
  */
 function isValidSingleTypeConstraint (value) {
-  return Array.from(presetTypes.keys()).includes(value) || isCustomTypeConstraint(value)
+  return has(arrayFrom(presetTypes.keys()), value) || isCustomTypeConstraint(value)
 }
 
 /**
@@ -239,7 +297,7 @@ function createMultiConstraintDetector (constraints) {
     constraints = [ constraints ];
   }
 
-  var specificityArray = Array.from(presetTypes.keys());
+  var specificityArray = arrayFrom(presetTypes.keys());
 
   constraints = constraints
     .slice(0)
@@ -261,19 +319,18 @@ function createMultiConstraintDetector (constraints) {
     );
 
   // Generate the function
-  return function (value, serialized) { return constraints
-    .find(function (constraint) {
-      try {
-        var unserializedValue = value;
-        if (serialized) {
-          unserializedValue = constraint.unserialize(value);
-        }
-
-        return constraint.validate(unserializedValue)
-      } catch (err) {
-        return false
+  return function (value, serialized) { return find(constraints, function (constraint) {
+    try {
+      var unserializedValue = value;
+      if (serialized) {
+        unserializedValue = constraint.unserialize(value);
       }
-    }); }
+
+      return constraint.validate(unserializedValue)
+    } catch (err) {
+      return false
+    }
+  }); }
 }
 
 /**
@@ -297,6 +354,11 @@ function validateOptionDefinition (optionDef) {
 
   // Definition is an object
   if (isPlainObject(optionDef)) {
+    // Fail no missing type constraint
+    if (!isValidTypeConstraint(optionDef.type)) {
+      throw Error('Definition must have a valid type constraint')
+    }
+
     var detectTypeConstraint = createMultiConstraintDetector(optionDef.type);
 
     // Required and default not allowed at the same time
@@ -308,7 +370,7 @@ function validateOptionDefinition (optionDef) {
     if (
       !optionDef.required &&
       isUndef(optionDef.default) &&
-      !(optionDef.type === null || (Array.isArray(optionDef.type) && optionDef.type.includes(null)))
+      !(optionDef.type === null || (Array.isArray(optionDef.type) && has(optionDef.type, null)))
     ) {
       throw new Error('An option must either be required, have a default value or include a `null` type')
     }
@@ -333,13 +395,22 @@ function validateOptionDefinition (optionDef) {
 function validateOptionsDefinition (obj) {
   if (!isPlainObject(obj)) { throw new Error('Options definition must be a plain object') }
 
-  for (var i = 0, list = Object.entries(obj); i < list.length; i += 1) {
+  for (var i = 0, list = entries(obj); i < list.length; i += 1) {
     var ref = list[i];
     var optionName = ref[0];
     var optionDef = ref[1];
 
     try {
       validateOptionDefinition(optionDef);
+
+      // Make simple types nullable
+      if (isValidTypeConstraint(optionDef)) {
+        if (Array.isArray(optionDef)) {
+          if (!has(optionDef, null)) { optionDef.push(null); }
+        } else if (optionDef !== null) {
+          obj[optionName] = [ optionDef, null ];
+        }
+      }
     } catch (err) {
       throw new Error(("Option definition for option \"" + optionName + "\" failed: " + (err.message)))
     }
@@ -361,7 +432,7 @@ function getTypeConstraints (optionDef) {
     } else {
       return [ presetTypes.get(optionDef) ]
     }
-  } else if (isValidTypeConstraint(optionDef.type)) {
+  } else {
     if (Array.isArray(optionDef.type)) {
       return optionDef.type
     } else if (isCustomTypeConstraint(optionDef.type)) {
@@ -369,8 +440,6 @@ function getTypeConstraints (optionDef) {
     } else {
       return [ presetTypes.get(optionDef.type) ]
     }
-  } else {
-    return undefined
   }
 }
 
@@ -387,44 +456,43 @@ function validateOptionValue (value, optionDef, isSerialized) {
   if ( isSerialized === void 0 ) isSerialized = false;
 
   var typeConstraints = getTypeConstraints(optionDef);
-  var hasTypeConstraints = typeof typeConstraints !== 'undefined';
+
+  // If nullable type, allow undefined and null values
+  if (value == null && has(typeConstraints, null)) {
+    return isSerialized
+      ? null
+      : 'null'
+  }
 
   var oppositeValue;
 
-  // Type is constrained
-  if (hasTypeConstraints) {
-    var detectTypeConstraint = createMultiConstraintDetector(typeConstraints);
+  var detectTypeConstraint = createMultiConstraintDetector(typeConstraints);
 
-    // Serialized value
-    if (isSerialized) {
-      // Detect correct constraint off of array
-      var typeConstraint = detectTypeConstraint(value, true);
+  // Serialized value
+  if (isSerialized) {
+    // Detect correct constraint off of array
+    var typeConstraint = detectTypeConstraint(value, true);
 
-      try {
-        oppositeValue = typeConstraint.unserialize(value);
-      } catch (e) {
-        throw new Error(("Invalid serialized option value \"" + value + "\""))
-      }
-
-      if (isUndef(typeConstraint) || !typeConstraint.validate(oppositeValue)) {
-        throw new Error(("Invalid serialized option value \"" + value + "\""))
-      }
-
-    // Typed value
-    } else {
-      // Detect correct constraint off of array
-      var typeConstraint$1 = detectTypeConstraint(value, false);
-
-      if (isUndef(typeConstraint$1) || !typeConstraint$1.validate(value)) {
-        throw new Error(("Invalid option value \"" + value + "\""))
-      } else {
-        oppositeValue = typeConstraint$1.serialize(value);
-      }
+    try {
+      oppositeValue = typeConstraint.unserialize(value);
+    } catch (e) {
+      throw new Error(("Invalid serialized option value \"" + value + "\""))
     }
 
-  // Type is unconstrained
+    if (!typeConstraint.validate(oppositeValue)) {
+      throw new Error(("Invalid serialized option value \"" + value + "\""))
+    }
+
+  // Typed value
   } else {
-    oppositeValue = value;
+    // Detect correct constraint off of array
+    var typeConstraint$1 = detectTypeConstraint(value, false);
+
+    if (isUndef(typeConstraint$1) || !typeConstraint$1.validate(value)) {
+      throw new Error(("Invalid option value \"" + value + "\""))
+    } else {
+      oppositeValue = typeConstraint$1.serialize(value);
+    }
   }
 
   return oppositeValue
@@ -471,7 +539,7 @@ function getInitialValues (element, optionsDef, emitter) {
     }
   };
 
-  for (var i = 0, list = Object.entries(optionsDef); i < list.length; i += 1) loop();
+  for (var i = 0, list = entries(optionsDef); i < list.length; i += 1) loop();
 
   return values
 }
@@ -529,7 +597,7 @@ function createOptionsDefInterface (optionsDef, element, values, emitter) {
           var serializedValue = validateOptionValue(value, optionDef, false);
 
           if (typeof serializedValue === 'string') {
-            element.dataset[optionName] = value;
+            element.dataset[optionName] = serializedValue;
           } else {
             delete element.dataset[optionName];
           }
@@ -540,7 +608,7 @@ function createOptionsDefInterface (optionsDef, element, values, emitter) {
     });
   };
 
-  for (var i = 0, list = Object.entries(optionsDef); i < list.length; i += 1) loop();
+  for (var i = 0, list = entries(optionsDef); i < list.length; i += 1) loop();
   return options
 }
 
@@ -558,7 +626,7 @@ function observeElement (element, attributes, callback) {
     for (var i = 0, list = records; i < list.length; i += 1) {
       var record = list[i];
 
-      if (record.type === 'attributes' && attributes.includes(record.attributeName)) {
+      if (record.type === 'attributes' && has(attributes, record.attributeName)) {
         callback(record.attributeName.slice(5), record.oldValue);
       }
     }

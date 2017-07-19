@@ -44,6 +44,58 @@ function mitt (all) {
   }
 }
 
+/**
+ * Use this instead of Object.entries() for compatibility
+ *
+ * @param {Object} obj
+ */
+function entries (obj) {
+  return Object.keys(obj).map(key => [ key, obj[key] ])
+}
+
+/**
+ * Use this instead of Array.prototype.includes() for compatibility
+ *
+ * @param {Array} arr
+ * @param {Any} value
+ */
+function has (array, value) {
+  return array.includes
+    ? array.includes(value)
+    : array.indexOf(value) !== -1
+}
+
+/**
+ * Use this instead of Array.prototype.find() for compatibility
+ *
+ * @param {Array} arr
+ * @param {Function} callback
+ */
+function find (array, callback) {
+  if (array.find) return array.find(callback)
+  for (let i = 0; i < array.length; i++) {
+    if (callback(array[i], i, array)) return array[i]
+  }
+  return undefined
+}
+
+/**
+ * Use this instead of Array.from() for compatibility
+ *
+ * @param {Object} obj
+ */
+function arrayFrom (obj) {
+  if (Array.from) return Array.from(obj)
+  if (Array.isArray(obj)) return obj.slice(0)
+
+  // If Array.from is not defined, we can safely assume that we use
+  // our own Map implementation and therefore the following is fine.
+  const items = []
+  for (let i = 0; i < obj.length; i++) items.push(obj[i])
+
+  return items
+}
+
 // A Map of predefined types, in descending specificity order
 const presetTypes = new Map([
   [ null, {
@@ -121,7 +173,7 @@ function isCustomTypeConstraint (value) {
  * @return {Boolean}
  */
 function isValidSingleTypeConstraint (value) {
-  return Array.from(presetTypes.keys()).includes(value) || isCustomTypeConstraint(value)
+  return has(arrayFrom(presetTypes.keys()), value) || isCustomTypeConstraint(value)
 }
 
 /**
@@ -151,7 +203,7 @@ function createMultiConstraintDetector (constraints) {
     constraints = [ constraints ]
   }
 
-  const specificityArray = Array.from(presetTypes.keys())
+  const specificityArray = arrayFrom(presetTypes.keys())
 
   constraints = constraints
     .slice(0)
@@ -174,19 +226,18 @@ function createMultiConstraintDetector (constraints) {
     )
 
   // Generate the function
-  return (value, serialized) => constraints
-    .find(constraint => {
-      try {
-        let unserializedValue = value
-        if (serialized) {
-          unserializedValue = constraint.unserialize(value)
-        }
-
-        return constraint.validate(unserializedValue)
-      } catch (err) {
-        return false
+  return (value, serialized) => find(constraints, constraint => {
+    try {
+      let unserializedValue = value
+      if (serialized) {
+        unserializedValue = constraint.unserialize(value)
       }
-    })
+
+      return constraint.validate(unserializedValue)
+    } catch (err) {
+      return false
+    }
+  })
 }
 
 /**
@@ -210,6 +261,11 @@ function validateOptionDefinition (optionDef) {
 
   // Definition is an object
   if (isPlainObject(optionDef)) {
+    // Fail no missing type constraint
+    if (!isValidTypeConstraint(optionDef.type)) {
+      throw Error('Definition must have a valid type constraint')
+    }
+
     const detectTypeConstraint = createMultiConstraintDetector(optionDef.type)
 
     // Required and default not allowed at the same time
@@ -221,7 +277,7 @@ function validateOptionDefinition (optionDef) {
     if (
       !optionDef.required &&
       isUndef(optionDef.default) &&
-      !(optionDef.type === null || (Array.isArray(optionDef.type) && optionDef.type.includes(null)))
+      !(optionDef.type === null || (Array.isArray(optionDef.type) && has(optionDef.type, null)))
     ) {
       throw new Error('An option must either be required, have a default value or include a `null` type')
     }
@@ -246,9 +302,18 @@ function validateOptionDefinition (optionDef) {
 function validateOptionsDefinition (obj) {
   if (!isPlainObject(obj)) throw new Error('Options definition must be a plain object')
 
-  for (const [optionName, optionDef] of Object.entries(obj)) {
+  for (const [optionName, optionDef] of entries(obj)) {
     try {
       validateOptionDefinition(optionDef)
+
+      // Make simple types nullable
+      if (isValidTypeConstraint(optionDef)) {
+        if (Array.isArray(optionDef)) {
+          if (!has(optionDef, null)) optionDef.push(null)
+        } else if (optionDef !== null) {
+          obj[optionName] = [ optionDef, null ]
+        }
+      }
     } catch (err) {
       throw new Error(`Option definition for option "${optionName}" failed: ${err.message}`)
     }
@@ -270,7 +335,7 @@ function getTypeConstraints (optionDef) {
     } else {
       return [ presetTypes.get(optionDef) ]
     }
-  } else if (isValidTypeConstraint(optionDef.type)) {
+  } else {
     if (Array.isArray(optionDef.type)) {
       return optionDef.type
     } else if (isCustomTypeConstraint(optionDef.type)) {
@@ -278,8 +343,6 @@ function getTypeConstraints (optionDef) {
     } else {
       return [ presetTypes.get(optionDef.type) ]
     }
-  } else {
-    return undefined
   }
 }
 
@@ -294,44 +357,43 @@ function getTypeConstraints (optionDef) {
  */
 function validateOptionValue (value, optionDef, isSerialized = false) {
   const typeConstraints = getTypeConstraints(optionDef)
-  const hasTypeConstraints = typeof typeConstraints !== 'undefined'
+
+  // If nullable type, allow undefined and null values
+  if (value == null && has(typeConstraints, null)) {
+    return isSerialized
+      ? null
+      : 'null'
+  }
 
   let oppositeValue
 
-  // Type is constrained
-  if (hasTypeConstraints) {
-    const detectTypeConstraint = createMultiConstraintDetector(typeConstraints)
+  const detectTypeConstraint = createMultiConstraintDetector(typeConstraints)
 
-    // Serialized value
-    if (isSerialized) {
-      // Detect correct constraint off of array
-      const typeConstraint = detectTypeConstraint(value, true)
+  // Serialized value
+  if (isSerialized) {
+    // Detect correct constraint off of array
+    const typeConstraint = detectTypeConstraint(value, true)
 
-      try {
-        oppositeValue = typeConstraint.unserialize(value)
-      } catch (e) {
-        throw new Error(`Invalid serialized option value "${value}"`)
-      }
-
-      if (isUndef(typeConstraint) || !typeConstraint.validate(oppositeValue)) {
-        throw new Error(`Invalid serialized option value "${value}"`)
-      }
-
-    // Typed value
-    } else {
-      // Detect correct constraint off of array
-      const typeConstraint = detectTypeConstraint(value, false)
-
-      if (isUndef(typeConstraint) || !typeConstraint.validate(value)) {
-        throw new Error(`Invalid option value "${value}"`)
-      } else {
-        oppositeValue = typeConstraint.serialize(value)
-      }
+    try {
+      oppositeValue = typeConstraint.unserialize(value)
+    } catch (e) {
+      throw new Error(`Invalid serialized option value "${value}"`)
     }
 
-  // Type is unconstrained
+    if (!typeConstraint.validate(oppositeValue)) {
+      throw new Error(`Invalid serialized option value "${value}"`)
+    }
+
+  // Typed value
   } else {
-    oppositeValue = value
+    // Detect correct constraint off of array
+    const typeConstraint = detectTypeConstraint(value, false)
+
+    if (isUndef(typeConstraint) || !typeConstraint.validate(value)) {
+      throw new Error(`Invalid option value "${value}"`)
+    } else {
+      oppositeValue = typeConstraint.serialize(value)
+    }
   }
 
   return oppositeValue
@@ -347,7 +409,7 @@ function validateOptionValue (value, optionDef, isSerialized = false) {
 function getInitialValues (element, optionsDef, emitter) {
   const values = Object.create(null)
 
-  for (const [optionName, optionDef] of Object.entries(optionsDef)) {
+  for (const [optionName, optionDef] of entries(optionsDef)) {
     const datasetValue = element.dataset[optionName]
 
     // Set in HTML
@@ -418,7 +480,7 @@ function createOptionsAttrList (optionsDef) {
  */
 function createOptionsDefInterface (optionsDef, element, values, emitter) {
   const options = Object.create(null)
-  for (const [optionName, optionDef] of Object.entries(optionsDef)) {
+  for (const [optionName, optionDef] of entries(optionsDef)) {
     Object.defineProperty(options, optionName, {
       get: () => values[optionName],
       set (value) {
@@ -426,7 +488,7 @@ function createOptionsDefInterface (optionsDef, element, values, emitter) {
           const serializedValue = validateOptionValue(value, optionDef, false)
 
           if (typeof serializedValue === 'string') {
-            element.dataset[optionName] = value
+            element.dataset[optionName] = serializedValue
           } else {
             delete element.dataset[optionName]
           }
@@ -451,7 +513,7 @@ function observeElement (element, attributes, callback) {
   // create an observer instance
   const observer = new window.MutationObserver(records => {
     for (const record of records) {
-      if (record.type === 'attributes' && attributes.includes(record.attributeName)) {
+      if (record.type === 'attributes' && has(attributes, record.attributeName)) {
         callback(record.attributeName.slice(5), record.oldValue)
       }
     }
