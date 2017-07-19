@@ -12,7 +12,7 @@
   },
   "scripts": {
     "test": "standard",
-    "prepublish": "npm run build",
+    "prepublishOnly": "npm run build",
     "build-prepare": "make-dir dist",
     "build-polyfilled": "node build/merge --sep-newline src/polyfill.map.js src/polyfill.array.js src/html-api.js > tmp-polyfilled.js",
     "build-es5": "buble src/html-api.js --yes dangerousForOf --no modules > tmp-transpiled.js",
