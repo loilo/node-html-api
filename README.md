@@ -79,6 +79,8 @@ api.options.swipeTime // 0.5
 api.options.multiple // true
 ```
 
+Consequently, this also allows you to configure your widget *exclusively* in HTML, without any knowledge of the inner JavaScript structure.
+
 
 ## Installation
 
