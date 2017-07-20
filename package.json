@@ -1,6 +1,6 @@
 {
   "name": "html-api",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Makes creating an HTML API a breeze",
   "main": "dist/cjs.es2015.js",
   "devDependencies": {
