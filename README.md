@@ -1,6 +1,7 @@
 # HTML API
 
-> This package is still under very early development, be careful if you want to use it.
+> This package is still under very early development, and thus the API is subject to change.
+> Be careful if you use it.
 
 This package helps you creating a nice and clean [dataset](https://developer.mozilla.org/docs/Web/API/HTMLElement/dataset)-based options [HTML API](https://www.smashingmagazine.com/2017/02/designing-html-apis/).
 
