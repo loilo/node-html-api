@@ -1,221 +1,14 @@
 /* global Element, requestAnimationFrame, MutationObserver, NodeList, HTMLCollection */
 
-// Mitt
-// A nicely compact event emitter
-// @see https://www.npmjs.com/package/mitt
-function mitt (all, once) {
-  all = all || Object.create(null)
-  once = once || Object.create(null)
-
-  return {
-    /**
-     * Register an event handler for the given type.
-     *
-     * @param  {String} type  Type of event to listen for, or `"*"` for all events
-     * @param  {Function} handler Function to call in response to given event
-     * @memberOf mitt
-     */
-    on (type, handler, skip = 0) {
-      if (skip === 0) {
-        (all[type] || (all[type] = [])).push(handler)
-      } else {
-        var self = this
-        this.once(type, function () {
-          self.on(type, handler)
-        }, skip - 1)
-      }
-    },
-
-    /**
-     * Register an event handler for the given type for one execution.
-     *
-     * @param  {String} type  Type of event to listen for, or `"*"` for all events
-     * @param  {Function} handler Function to call in response to given event
-     * @memberOf mitt
-     */
-    once (type, handler, skip = 0) {
-      if (skip === 0) {
-        (once[type] || (once[type] = [])).push(handler)
-      } else {
-        var self = this
-        ;(once[type] || (once[type] = [])).push(function () {
-          self.once(type, handler, skip - 1)
-        })
-      }
-    },
-
-    /**
-     * Remove an event handler for the given type.
-     *
-     * @param  {String} type  Type of event to unregister `handler` from, or `"*"`
-     * @param  {Function} handler Handler function to remove
-     * @memberOf mitt
-     */
-    off (type, handler) {
-      if (all[type]) {
-        all[type].splice(all[type].indexOf(handler) >>> 0, 1)
-      }
-      if (once[type]) {
-        once[type].splice(once[type].indexOf(handler) >>> 0, 1)
-      }
-    },
-
-    /**
-     * Invoke all handlers for the given type.
-     * If present, `"*"` handlers are invoked after type-matched handlers.
-     *
-     * @param {String} type  The event type to invoke
-     * @param {Any} [evt]  Any value (object is recommended and powerful), passed to each handler
-     * @memberof mitt
-     */
-    emit (type, evt) {
-      ;(all[type] || []).map(function (handler) { handler(evt) })
-      ;(all['*'] || []).map(function (handler) { handler(type, evt) })
-      ;(once[type] || []).map(function (handler) { handler(evt) })
-      ;(once['*'] || []).map(function (handler) { handler(type, evt) })
-    },
-
-    /**
-     * Clear the emitter by removing all handlers
-     *
-     * @memberof mitt
-     */
-    clear () {
-      all = {}
-      once = {}
-    },
-
-    get _listeners () {
-      return all
-    }
-  }
-}
-
-/**
- * Use this instead of Object.entries() for compatibility
- *
- * @param {Object} obj
- */
-function entries (obj) {
-  return Object.keys(obj).map(key => [ key, obj[key] ])
-}
-
-/**
- * Use this instead of Array.prototype.includes() for compatibility
- *
- * @param {Array} arr
- * @param {Any} value
- */
-function has (array, value) {
-  return array.includes
-    ? array.includes(value)
-    : array.indexOf(value) !== -1
-}
-
-/**
- * Use this instead of Array.prototype.find() for compatibility
- *
- * @param {Array} arr
- * @param {Function} callback
- */
-function find (array, callback) {
-  if (array.find) return array.find(callback)
-  for (let i = 0; i < array.length; i++) {
-    if (callback(array[i], i, array)) return array[i]
-  }
-  return undefined
-}
-
-/**
- * Use this instead of Array.from() for compatibility
- *
- * @param {Object} obj
- */
-function toArray (obj) {
-  if (Array.from) return Array.from(obj)
-  if (Array.isArray(obj)) return obj.slice(0)
-
-  // If Array.from is not defined, we can safely assume that we use
-  // our own Map implementation and therefore the following is fine.
-  const items = []
-  for (let i = 0; i < obj.length; i++) items.push(obj[i])
-
-  return items
-}
-
-/**
- * Use this instead of Object.assign() for compatibility
- *
- * @param {Object} ...obj
- */
-function extend (...objects) {
-  if (Object.assign) return Object.assign(...objects)
-  if (objects.length === 0) throw new TypeError('Cannot convert undefined or null to object')
-  if (objects.length === 1) return objects[0]
-
-  for (let key in objects[1]) {
-    objects[0][key] = objects[1][key]
-  }
-
-  return extend(objects[0], ...objects.slice(2))
-}
-
-// A Map of predefined types, in descending specificity order
-const presetTypes = new Map([
-  [ null, {
-    validate: value => value == null,
-    serialize: value => 'null',
-    unserialize: value => JSON.parse(value)
-  }],
-  [ Boolean, {
-    validate: value => typeof value === 'boolean',
-    serialize: value => value ? '' : undefined,
-    unserialize: value => {
-      if (typeof value === 'undefined' || value === 'false') {
-        return false
-      }
-      if (value === '' || value === 'true') {
-        return true
-      }
-
-      throw new Error('Invalidly serialized Boolean')
-    }
-  }],
-  [ Number, {
-    validate: value => typeof value === 'number' && !isNaN(value),
-    serialize: number => String(number),
-    unserialize: value => +value
-  }],
-  [ Array, {
-    validate: value => Array.isArray(value),
-    serialize: value => JSON.stringify(value),
-    unserialize: value => JSON.parse(value)
-  }],
-  [ Object, {
-    validate: value => typeof value === 'object' && value !== null && !Array.isArray(value),
-    serialize: value => JSON.stringify(value),
-    unserialize: value => JSON.parse(value)
-  }],
-  [ Function, {
-    validate: value => typeof value === 'function',
-    serialize: value => String(value),
-    unserialize: value => /* eslint-disable no-eval */ eval(`(${value})`)
-  }],
-  [ String, {
-    validate: value => typeof value === 'string',
-    serialize: value => value,
-    unserialize: value => value
-  }]
-])
-
-/**
- * Checks if value is a plain object
- * @param  {Any}  obj
- * @return {Boolean}
- */
-function isPlainObject (value) {
-  return typeof value === 'object' && value !== null && value.prototype == null
-}
+import mitt from './lib/mitt'
+import {
+  isUndef,
+  kebab, camel,
+  has, find, toArray,
+  isPlainObject, entries, extend,
+  matches
+} from './lib/helpers'
+import presetTypes from './lib/preset-types'
 
 /**
  * Checks if a value is a custom type constraint
@@ -253,7 +46,7 @@ function isValidTypeConstraint (value) {
 }
 
 /**
- * Creates a function from a set of type constraints
+ * Creates a function from an array of type constraints
  * which takes a value and a `serialized` flag and returns
  * the first appropriate type constraint.
  * It respects the specificity order of type constraints.
@@ -302,30 +95,6 @@ function createMultiConstraintDetector (constraints) {
       return false
     }
   })
-}
-
-/**
- * Checks if a value is undefined
- *
- * @param {Any} value
- * @return {Boolean}
- */
-function isUndef (value) {
-  return typeof value === 'undefined'
-}
-
-/**
- * Checks if an element matches a given selector
- *
- * @param {Element} el
- * @param {String} selector
- */
-function matches (el, selector) {
-  const proto = Element.prototype
-  const fn = proto.matches || proto.webkitMatchesSelector || proto.mozMatchesSelector || proto.msMatchesSelector || function (selector) {
-    return [].indexOf.call(document.querySelectorAll(selector), this) !== -1
-  }
-  return fn.call(el, selector)
 }
 
 /**
@@ -550,26 +319,6 @@ function getInitialValues (element, optionsDef, emitter) {
   }
 
   return { values, bufferedInitials }
-}
-
-/**
- * Turns a camelCase string into a kebab-case string
- *
- * @param {String} camel
- * @return {String}
- */
-function kebab (camel) {
-  return camel.replace(/([A-Z])/g, (matches, char) => '-' + char.toLowerCase())
-}
-
-/**
- * Turns a kebab-case string into a camelCase string
- *
- * @param {String} kebab
- * @return {String}
- */
-function camel (kebab) {
-  return kebab.replace(/-([a-z])/g, (matches, char) => char.toUpperCase())
 }
 
 /**
@@ -954,12 +703,22 @@ export default function htmlApi (optionsDef) {
   }
 }
 
+/**
+ * Define Enum constraint
+ */
 htmlApi.Enum = (...values) => ({
   validate: value => typeof value === 'string' && has(values, value),
   serialize: value => value,
   unserialize: value => value
 })
 
+/**
+ * Generate a number constraint
+ *
+ * @param {Number} min
+ * @param {Number} max
+ * @param {Boolean} float
+ */
 const numGen = (min = -Infinity, max = Infinity, float = true) => ({
   validate: value => {
     if (typeof value !== 'number' || !isFinite(value)) return false
@@ -976,6 +735,9 @@ const numGen = (min = -Infinity, max = Infinity, float = true) => ({
   unserialize: value => +value
 })
 
+/**
+ * Define Integer constraint
+ */
 htmlApi.Integer = extend(numGen(-Infinity, Infinity, false), {
   min: min => extend(numGen(min, Infinity, false), {
     max: max => numGen(min, max, false)
@@ -983,6 +745,9 @@ htmlApi.Integer = extend(numGen(-Infinity, Infinity, false), {
   max: max => numGen(-Infinity, max, false)
 })
 
+/**
+ * Define Float constraint
+ */
 htmlApi.Float = extend(numGen(-Infinity, Infinity), {
   min: min => extend(numGen(min, Infinity), {
     max: max => numGen(min, max)

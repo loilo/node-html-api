@@ -1,102 +1,11 @@
 var htmlApi = (function () {
 'use strict';
 
-/**
- * A very primitive Map polyfill which does *not* override the global Map
- * Is concatenated with the package's source code
+/*
+ * Mitt
+ * A nicely compact event emitter, adjusted for our needs
+ * @see https://www.npmjs.com/package/mitt
  */
-var Map;
-
-if (!window.Map || !window.Map.prototype.entries) {
-  /* eslint-disable no-extend-native */
-  Map = function (entries) {
-    if (entries instanceof Map) {
-      entries = entries.entries();
-    } else if (!Array.isArray(entries)) {
-      entries = [];
-    }
-
-    this._keys = entries.map(function (entry) { return entry[0] });
-    this._values = entries.map(function (entry) { return entry[1] });
-  };
-
-  Map.prototype.keys = function () {
-    return this._keys.slice(0)
-  };
-
-  Map.prototype.values = function () {
-    return this._values.slice(0)
-  };
-
-  Map.prototype.entries = function () {
-    var self = this;
-    return this._keys.map(function (key, index) {
-      return [ key, self._values[index] ]
-    })
-  };
-
-  Map.prototype.has = function (key) {
-    return this._keys.indexOf(key) !== -1
-  };
-
-  Map.prototype.get = function (key) {
-    var index = this._keys.indexOf(key);
-    if (index === -1) {
-      return undefined
-    } else {
-      return this._values[index]
-    }
-  };
-
-  Map.prototype.set = function (key, value) {
-    var index = this._keys.indexOf(key);
-    if (index === -1) {
-      this._keys.push(key);
-      this._values.push(value);
-    } else {
-      this._values[index] = value;
-    }
-    return this
-  };
-
-  Map.prototype.delete = function (key) {
-    var index = this._keys.indexOf(key);
-    if (index === -1) {
-      return false
-    } else {
-      this._keys.splice(index, 1);
-      this._values.splice(index, 1);
-      return true
-    }
-  };
-
-  Map.prototype.clear = function () {
-    this._keys = [];
-    this._values = [];
-  };
-
-  Map.prototype.forEach = function (callback) {
-    return this.entries().forEach(callback)
-  };
-
-  Map.prototype.size = function () {
-    return this._keys.length
-  };
-} else {
-  Map = window.Map;
-}
-
-if (!Array.isArray) {
-  Array.isArray = function (vArg) {
-    return Object.prototype.toString.call(vArg) === '[object Array]'
-  };
-}
-
-/* global Element, requestAnimationFrame, MutationObserver, NodeList, HTMLCollection */
-
-// Mitt
-// A nicely compact event emitter
-// @see https://www.npmjs.com/package/mitt
 function mitt (all, once) {
   all = all || Object.create(null);
   once = once || Object.create(null);
@@ -109,9 +18,7 @@ function mitt (all, once) {
      * @param  {Function} handler Function to call in response to given event
      * @memberOf mitt
      */
-    on: function on (type, handler, skip) {
-      if ( skip === void 0 ) skip = 0;
-
+    on (type, handler, skip = 0) {
       if (skip === 0) {
         (all[type] || (all[type] = [])).push(handler);
       } else {
@@ -129,9 +36,7 @@ function mitt (all, once) {
      * @param  {Function} handler Function to call in response to given event
      * @memberOf mitt
      */
-    once: function once$1 (type, handler, skip) {
-      if ( skip === void 0 ) skip = 0;
-
+    once (type, handler, skip = 0) {
       if (skip === 0) {
         (once[type] || (once[type] = [])).push(handler);
       } else {
@@ -148,7 +53,7 @@ function mitt (all, once) {
      * @param  {Function} handler Handler function to remove
      * @memberOf mitt
      */
-    off: function off (type, handler) {
+    off (type, handler) {
       if (all[type]) {
         all[type].splice(all[type].indexOf(handler) >>> 0, 1);
       }
@@ -165,7 +70,7 @@ function mitt (all, once) {
      * @param {Any} [evt]  Any value (object is recommended and powerful), passed to each handler
      * @memberof mitt
      */
-    emit: function emit (type, evt) {
+    emit (type, evt) {
       (all[type] || []).map(function (handler) { handler(evt); })
       ;(all['*'] || []).map(function (handler) { handler(type, evt); })
       ;(once[type] || []).map(function (handler) { handler(evt); })
@@ -177,7 +82,7 @@ function mitt (all, once) {
      *
      * @memberof mitt
      */
-    clear: function clear () {
+    clear () {
       all = {};
       once = {};
     },
@@ -188,14 +93,45 @@ function mitt (all, once) {
   }
 }
 
+/* global Element */
+
 /**
- * Use this instead of Object.entries() for compatibility
+ * Checks if a value is undefined
  *
- * @param {Object} obj
+ * @param {Any} value
+ * @return {Boolean}
  */
-function entries (obj) {
-  return Object.keys(obj).map(function (key) { return [ key, obj[key] ]; })
+function isUndef (value) {
+  return typeof value === 'undefined'
 }
+
+/*
+ * Strings
+ */
+
+/**
+ * Turns a camelCase string into a kebab-case string
+ *
+ * @param {String} camel
+ * @return {String}
+ */
+function kebab (camel) {
+  return camel.replace(/([A-Z])/g, (matches, char) => '-' + char.toLowerCase())
+}
+
+/**
+ * Turns a kebab-case string into a camelCase string
+ *
+ * @param {String} kebab
+ * @return {String}
+ */
+function camel (kebab) {
+  return kebab.replace(/-([a-z])/g, (matches, char) => char.toUpperCase())
+}
+
+/*
+ * Arrays
+ */
 
 /**
  * Use this instead of Array.prototype.includes() for compatibility
@@ -216,9 +152,9 @@ function has (array, value) {
  * @param {Function} callback
  */
 function find (array, callback) {
-  if (array.find) { return array.find(callback) }
-  for (var i = 0; i < array.length; i++) {
-    if (callback(array[i], i, array)) { return array[i] }
+  if (array.find) return array.find(callback)
+  for (let i = 0; i < array.length; i++) {
+    if (callback(array[i], i, array)) return array[i]
   }
   return undefined
 }
@@ -229,15 +165,37 @@ function find (array, callback) {
  * @param {Object} obj
  */
 function toArray (obj) {
-  if (Array.from) { return Array.from(obj) }
-  if (Array.isArray(obj)) { return obj.slice(0) }
+  if (Array.from) return Array.from(obj)
+  if (Array.isArray(obj)) return obj.slice(0)
 
   // If Array.from is not defined, we can safely assume that we use
   // our own Map implementation and therefore the following is fine.
-  var items = [];
-  for (var i = 0; i < obj.length; i++) { items.push(obj[i]); }
+  const items = [];
+  for (let i = 0; i < obj.length; i++) items.push(obj[i]);
 
   return items
+}
+
+/**
+ * Objects
+ */
+
+/**
+ * Checks if value is a plain object
+ * @param  {Any}  obj
+ * @return {Boolean}
+ */
+function isPlainObject (value) {
+  return typeof value === 'object' && value !== null && value.prototype == null
+}
+
+/**
+ * Use this instead of Object.entries() for compatibility
+ *
+ * @param {Object} obj
+ */
+function entries (obj) {
+  return Object.keys(obj).map(key => [ key, obj[key] ])
 }
 
 /**
@@ -245,32 +203,47 @@ function toArray (obj) {
  *
  * @param {Object} ...obj
  */
-function extend () {
-  var objects = [], len = arguments.length;
-  while ( len-- ) objects[ len ] = arguments[ len ];
+function extend (...objects) {
+  if (Object.assign) return Object.assign(...objects)
+  if (objects.length === 0) throw new TypeError('Cannot convert undefined or null to object')
+  if (objects.length === 1) return objects[0]
 
-  if (Object.assign) { return Object.assign.apply(Object, objects) }
-  if (objects.length === 0) { throw new TypeError('Cannot convert undefined or null to object') }
-  if (objects.length === 1) { return objects[0] }
-
-  for (var key in objects[1]) {
+  for (let key in objects[1]) {
     objects[0][key] = objects[1][key];
   }
 
-  return extend.apply(void 0, [ objects[0] ].concat( objects.slice(2) ))
+  return extend(objects[0], ...objects.slice(2))
+}
+
+/*
+ * DOM
+ */
+
+/**
+ * Checks if an element matches a given selector
+ *
+ * @param {Element} el
+ * @param {String} selector
+ */
+function matches (el, selector) {
+  const proto = Element.prototype;
+  const fn = proto.matches || proto.webkitMatchesSelector || proto.mozMatchesSelector || proto.msMatchesSelector || function (selector) {
+    return [].indexOf.call(document.querySelectorAll(selector), this) !== -1
+  };
+  return fn.call(el, selector)
 }
 
 // A Map of predefined types, in descending specificity order
 var presetTypes = new Map([
   [ null, {
-    validate: function (value) { return value == null; },
-    serialize: function (value) { return 'null'; },
-    unserialize: function (value) { return JSON.parse(value); }
+    validate: value => value == null,
+    serialize: value => 'null',
+    unserialize: value => JSON.parse(value)
   }],
   [ Boolean, {
-    validate: function (value) { return typeof value === 'boolean'; },
-    serialize: function (value) { return value ? '' : undefined; },
-    unserialize: function (value) {
+    validate: value => typeof value === 'boolean',
+    serialize: value => value ? '' : undefined,
+    unserialize: value => {
       if (typeof value === 'undefined' || value === 'false') {
         return false
       }
@@ -282,40 +255,124 @@ var presetTypes = new Map([
     }
   }],
   [ Number, {
-    validate: function (value) { return typeof value === 'number' && !isNaN(value); },
-    serialize: function (number) { return String(number); },
-    unserialize: function (value) { return +value; }
+    validate: value => typeof value === 'number' && !isNaN(value),
+    serialize: number => String(number),
+    unserialize: value => +value
   }],
   [ Array, {
-    validate: function (value) { return Array.isArray(value); },
-    serialize: function (value) { return JSON.stringify(value); },
-    unserialize: function (value) { return JSON.parse(value); }
+    validate: value => Array.isArray(value),
+    serialize: value => JSON.stringify(value),
+    unserialize: value => JSON.parse(value)
   }],
   [ Object, {
-    validate: function (value) { return typeof value === 'object' && value !== null && !Array.isArray(value); },
-    serialize: function (value) { return JSON.stringify(value); },
-    unserialize: function (value) { return JSON.parse(value); }
+    validate: value => typeof value === 'object' && value !== null && !Array.isArray(value),
+    serialize: value => JSON.stringify(value),
+    unserialize: value => JSON.parse(value)
   }],
   [ Function, {
-    validate: function (value) { return typeof value === 'function'; },
-    serialize: function (value) { return String(value); },
-    unserialize: function (value) { return eval(("(" + value + ")")); }
+    validate: value => typeof value === 'function',
+    serialize: value => String(value),
+    unserialize: value => /* eslint-disable no-eval */ eval(`(${value})`)
   }],
   [ String, {
-    validate: function (value) { return typeof value === 'string'; },
-    serialize: function (value) { return value; },
-    unserialize: function (value) { return value; }
+    validate: value => typeof value === 'string',
+    serialize: value => value,
+    unserialize: value => value
   }]
 ]);
 
 /**
- * Checks if value is a plain object
- * @param  {Any}  obj
- * @return {Boolean}
+ * A very primitive Map polyfill which does *not* override the global Map
+ * Is concatenated with the package's source code
  */
-function isPlainObject (value) {
-  return typeof value === 'object' && value !== null && value.prototype == null
+var Map$1;
+
+if (!window.Map || !window.Map.prototype.entries) {
+  /* eslint-disable no-extend-native */
+  Map$1 = function (entries$$1) {
+    if (entries$$1 instanceof Map$1) {
+      entries$$1 = entries$$1.entries();
+    } else if (!Array.isArray(entries$$1)) {
+      entries$$1 = [];
+    }
+
+    this._keys = entries$$1.map(function (entry) { return entry[0] });
+    this._values = entries$$1.map(function (entry) { return entry[1] });
+  };
+
+  Map$1.prototype.keys = function () {
+    return this._keys.slice(0)
+  };
+
+  Map$1.prototype.values = function () {
+    return this._values.slice(0)
+  };
+
+  Map$1.prototype.entries = function () {
+    var self = this;
+    return this._keys.map(function (key, index) {
+      return [ key, self._values[index] ]
+    })
+  };
+
+  Map$1.prototype.has = function (key) {
+    return this._keys.indexOf(key) !== -1
+  };
+
+  Map$1.prototype.get = function (key) {
+    var index = this._keys.indexOf(key);
+    if (index === -1) {
+      return undefined
+    } else {
+      return this._values[index]
+    }
+  };
+
+  Map$1.prototype.set = function (key, value) {
+    var index = this._keys.indexOf(key);
+    if (index === -1) {
+      this._keys.push(key);
+      this._values.push(value);
+    } else {
+      this._values[index] = value;
+    }
+    return this
+  };
+
+  Map$1.prototype.delete = function (key) {
+    var index = this._keys.indexOf(key);
+    if (index === -1) {
+      return false
+    } else {
+      this._keys.splice(index, 1);
+      this._values.splice(index, 1);
+      return true
+    }
+  };
+
+  Map$1.prototype.clear = function () {
+    this._keys = [];
+    this._values = [];
+  };
+
+  Map$1.prototype.forEach = function (callback) {
+    return this.entries().forEach(callback)
+  };
+
+  Map$1.prototype.size = function () {
+    return this._keys.length
+  };
+} else {
+  Map$1 = window.Map;
 }
+
+if (!Array.isArray) {
+  Array.isArray = function (vArg) {
+    return Object.prototype.toString.call(vArg) === '[object Array]'
+  };
+}
+
+/* global Element, requestAnimationFrame, MutationObserver, NodeList, HTMLCollection */
 
 /**
  * Checks if a value is a custom type constraint
@@ -353,7 +410,7 @@ function isValidTypeConstraint (value) {
 }
 
 /**
- * Creates a function from a set of type constraints
+ * Creates a function from an array of type constraints
  * which takes a value and a `serialized` flag and returns
  * the first appropriate type constraint.
  * It respects the specificity order of type constraints.
@@ -401,30 +458,6 @@ function createMultiConstraintDetector (constraints) {
       return false
     }
   }); }
-}
-
-/**
- * Checks if a value is undefined
- *
- * @param {Any} value
- * @return {Boolean}
- */
-function isUndef (value) {
-  return typeof value === 'undefined'
-}
-
-/**
- * Checks if an element matches a given selector
- *
- * @param {Element} el
- * @param {String} selector
- */
-function matches (el, selector) {
-  var proto = Element.prototype;
-  var fn = proto.matches || proto.webkitMatchesSelector || proto.mozMatchesSelector || proto.msMatchesSelector || function (selector) {
-    return [].indexOf.call(document.querySelectorAll(selector), this) !== -1
-  };
-  return fn.call(el, selector)
 }
 
 /**
@@ -663,26 +696,6 @@ function getInitialValues (element, optionsDef, emitter) {
   for (var i = 0, list = entries(optionsDef); i < list.length; i += 1) loop();
 
   return { values: values, bufferedInitials: bufferedInitials }
-}
-
-/**
- * Turns a camelCase string into a kebab-case string
- *
- * @param {String} camel
- * @return {String}
- */
-function kebab (camel) {
-  return camel.replace(/([A-Z])/g, function (matches, char) { return '-' + char.toLowerCase(); })
-}
-
-/**
- * Turns a kebab-case string into a camelCase string
- *
- * @param {String} kebab
- * @return {String}
- */
-function camel (kebab) {
-  return kebab.replace(/-([a-z])/g, function (matches, char) { return char.toUpperCase(); })
 }
 
 /**
@@ -955,7 +968,7 @@ function htmlApi (optionsDef) {
     if (observableSelector) { elements = toArray(document.querySelectorAll(elements)); }
 
     // Set up a list of element APIs
-    var elementApis = new Map();
+    var elementApis = new Map$1();
 
     // Set up the event emitter
     var emitter = mitt();
@@ -1090,6 +1103,9 @@ function htmlApi (optionsDef) {
   }
 }
 
+/**
+ * Define Enum constraint
+ */
 htmlApi.Enum = function () {
   var values = [], len = arguments.length;
   while ( len-- ) values[ len ] = arguments[ len ];
@@ -1101,6 +1117,13 @@ htmlApi.Enum = function () {
 });
 };
 
+/**
+ * Generate a number constraint
+ *
+ * @param {Number} min
+ * @param {Number} max
+ * @param {Boolean} float
+ */
 var numGen = function (min, max, float) {
   if ( min === void 0 ) min = -Infinity;
   if ( max === void 0 ) max = Infinity;
@@ -1123,6 +1146,9 @@ var numGen = function (min, max, float) {
 });
 };
 
+/**
+ * Define Integer constraint
+ */
 htmlApi.Integer = extend(numGen(-Infinity, Infinity, false), {
   min: function (min) { return extend(numGen(min, Infinity, false), {
     max: function (max) { return numGen(min, max, false); }
@@ -1130,6 +1156,9 @@ htmlApi.Integer = extend(numGen(-Infinity, Infinity, false), {
   max: function (max) { return numGen(-Infinity, max, false); }
 });
 
+/**
+ * Define Float constraint
+ */
 htmlApi.Float = extend(numGen(-Infinity, Infinity), {
   min: function (min) { return extend(numGen(min, Infinity), {
     max: function (max) { return numGen(min, max); }

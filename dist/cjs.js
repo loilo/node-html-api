@@ -1,11 +1,11 @@
 var htmlApi = (function () {
 'use strict';
 
-/* global Element, requestAnimationFrame, MutationObserver, NodeList, HTMLCollection */
-
-// Mitt
-// A nicely compact event emitter
-// @see https://www.npmjs.com/package/mitt
+/*
+ * Mitt
+ * A nicely compact event emitter, adjusted for our needs
+ * @see https://www.npmjs.com/package/mitt
+ */
 function mitt (all, once) {
   all = all || Object.create(null);
   once = once || Object.create(null);
@@ -93,14 +93,45 @@ function mitt (all, once) {
   }
 }
 
+/* global Element */
+
 /**
- * Use this instead of Object.entries() for compatibility
+ * Checks if a value is undefined
  *
- * @param {Object} obj
+ * @param {Any} value
+ * @return {Boolean}
  */
-function entries (obj) {
-  return Object.keys(obj).map(key => [ key, obj[key] ])
+function isUndef (value) {
+  return typeof value === 'undefined'
 }
+
+/*
+ * Strings
+ */
+
+/**
+ * Turns a camelCase string into a kebab-case string
+ *
+ * @param {String} camel
+ * @return {String}
+ */
+function kebab (camel) {
+  return camel.replace(/([A-Z])/g, (matches, char) => '-' + char.toLowerCase())
+}
+
+/**
+ * Turns a kebab-case string into a camelCase string
+ *
+ * @param {String} kebab
+ * @return {String}
+ */
+function camel (kebab) {
+  return kebab.replace(/-([a-z])/g, (matches, char) => char.toUpperCase())
+}
+
+/*
+ * Arrays
+ */
 
 /**
  * Use this instead of Array.prototype.includes() for compatibility
@@ -146,6 +177,28 @@ function toArray (obj) {
 }
 
 /**
+ * Objects
+ */
+
+/**
+ * Checks if value is a plain object
+ * @param  {Any}  obj
+ * @return {Boolean}
+ */
+function isPlainObject (value) {
+  return typeof value === 'object' && value !== null && value.prototype == null
+}
+
+/**
+ * Use this instead of Object.entries() for compatibility
+ *
+ * @param {Object} obj
+ */
+function entries (obj) {
+  return Object.keys(obj).map(key => [ key, obj[key] ])
+}
+
+/**
  * Use this instead of Object.assign() for compatibility
  *
  * @param {Object} ...obj
@@ -162,8 +215,26 @@ function extend (...objects) {
   return extend(objects[0], ...objects.slice(2))
 }
 
+/*
+ * DOM
+ */
+
+/**
+ * Checks if an element matches a given selector
+ *
+ * @param {Element} el
+ * @param {String} selector
+ */
+function matches (el, selector) {
+  const proto = Element.prototype;
+  const fn = proto.matches || proto.webkitMatchesSelector || proto.mozMatchesSelector || proto.msMatchesSelector || function (selector) {
+    return [].indexOf.call(document.querySelectorAll(selector), this) !== -1
+  };
+  return fn.call(el, selector)
+}
+
 // A Map of predefined types, in descending specificity order
-const presetTypes = new Map([
+var presetTypes = new Map([
   [ null, {
     validate: value => value == null,
     serialize: value => 'null',
@@ -210,14 +281,7 @@ const presetTypes = new Map([
   }]
 ]);
 
-/**
- * Checks if value is a plain object
- * @param  {Any}  obj
- * @return {Boolean}
- */
-function isPlainObject (value) {
-  return typeof value === 'object' && value !== null && value.prototype == null
-}
+/* global Element, requestAnimationFrame, MutationObserver, NodeList, HTMLCollection */
 
 /**
  * Checks if a value is a custom type constraint
@@ -255,7 +319,7 @@ function isValidTypeConstraint (value) {
 }
 
 /**
- * Creates a function from a set of type constraints
+ * Creates a function from an array of type constraints
  * which takes a value and a `serialized` flag and returns
  * the first appropriate type constraint.
  * It respects the specificity order of type constraints.
@@ -304,30 +368,6 @@ function createMultiConstraintDetector (constraints) {
       return false
     }
   })
-}
-
-/**
- * Checks if a value is undefined
- *
- * @param {Any} value
- * @return {Boolean}
- */
-function isUndef (value) {
-  return typeof value === 'undefined'
-}
-
-/**
- * Checks if an element matches a given selector
- *
- * @param {Element} el
- * @param {String} selector
- */
-function matches (el, selector) {
-  const proto = Element.prototype;
-  const fn = proto.matches || proto.webkitMatchesSelector || proto.mozMatchesSelector || proto.msMatchesSelector || function (selector) {
-    return [].indexOf.call(document.querySelectorAll(selector), this) !== -1
-  };
-  return fn.call(el, selector)
 }
 
 /**
@@ -552,26 +592,6 @@ function getInitialValues (element, optionsDef, emitter) {
   }
 
   return { values, bufferedInitials }
-}
-
-/**
- * Turns a camelCase string into a kebab-case string
- *
- * @param {String} camel
- * @return {String}
- */
-function kebab (camel) {
-  return camel.replace(/([A-Z])/g, (matches, char) => '-' + char.toLowerCase())
-}
-
-/**
- * Turns a kebab-case string into a camelCase string
- *
- * @param {String} kebab
- * @return {String}
- */
-function camel (kebab) {
-  return kebab.replace(/-([a-z])/g, (matches, char) => char.toUpperCase())
 }
 
 /**
@@ -956,12 +976,22 @@ function htmlApi (optionsDef) {
   }
 }
 
+/**
+ * Define Enum constraint
+ */
 htmlApi.Enum = (...values) => ({
   validate: value => typeof value === 'string' && has(values, value),
   serialize: value => value,
   unserialize: value => value
 });
 
+/**
+ * Generate a number constraint
+ *
+ * @param {Number} min
+ * @param {Number} max
+ * @param {Boolean} float
+ */
 const numGen = (min = -Infinity, max = Infinity, float = true) => ({
   validate: value => {
     if (typeof value !== 'number' || !isFinite(value)) return false
@@ -978,6 +1008,9 @@ const numGen = (min = -Infinity, max = Infinity, float = true) => ({
   unserialize: value => +value
 });
 
+/**
+ * Define Integer constraint
+ */
 htmlApi.Integer = extend(numGen(-Infinity, Infinity, false), {
   min: min => extend(numGen(min, Infinity, false), {
     max: max => numGen(min, max, false)
@@ -985,6 +1018,9 @@ htmlApi.Integer = extend(numGen(-Infinity, Infinity, false), {
   max: max => numGen(-Infinity, max, false)
 });
 
+/**
+ * Define Float constraint
+ */
 htmlApi.Float = extend(numGen(-Infinity, Infinity), {
   min: min => extend(numGen(min, Infinity), {
     max: max => numGen(min, max)
