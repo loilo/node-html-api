@@ -1,8 +1,11 @@
+/* global Element, requestAnimationFrame, MutationObserver, NodeList, HTMLCollection */
+
 // Mitt
 // A nicely compact event emitter
 // @see https://www.npmjs.com/package/mitt
-function mitt (all) {
+function mitt (all, once) {
   all = all || Object.create(null)
+  once = once || Object.create(null)
 
   return {
     /**
@@ -12,8 +15,33 @@ function mitt (all) {
      * @param  {Function} handler Function to call in response to given event
      * @memberOf mitt
      */
-    on: function on (type, handler) {
-      (all[type] || (all[type] = [])).push(handler)
+    on (type, handler, skip = 0) {
+      if (skip === 0) {
+        (all[type] || (all[type] = [])).push(handler)
+      } else {
+        var self = this
+        this.once(type, function () {
+          self.on(type, handler)
+        }, skip - 1)
+      }
+    },
+
+    /**
+     * Register an event handler for the given type for one execution.
+     *
+     * @param  {String} type  Type of event to listen for, or `"*"` for all events
+     * @param  {Function} handler Function to call in response to given event
+     * @memberOf mitt
+     */
+    once (type, handler, skip = 0) {
+      if (skip === 0) {
+        (once[type] || (once[type] = [])).push(handler)
+      } else {
+        var self = this
+        ;(once[type] || (once[type] = [])).push(function () {
+          self.once(type, handler, skip - 1)
+        })
+      }
     },
 
     /**
@@ -23,9 +51,12 @@ function mitt (all) {
      * @param  {Function} handler Handler function to remove
      * @memberOf mitt
      */
-    off: function off (type, handler) {
+    off (type, handler) {
       if (all[type]) {
         all[type].splice(all[type].indexOf(handler) >>> 0, 1)
+      }
+      if (once[type]) {
+        once[type].splice(once[type].indexOf(handler) >>> 0, 1)
       }
     },
 
@@ -37,9 +68,25 @@ function mitt (all) {
      * @param {Any} [evt]  Any value (object is recommended and powerful), passed to each handler
      * @memberof mitt
      */
-    emit: function emit (type, evt) {
-      (all[type] || []).map(function (handler) { handler(evt) });
-      (all['*'] || []).map(function (handler) { handler(type, evt) })
+    emit (type, evt) {
+      ;(all[type] || []).map(function (handler) { handler(evt) })
+      ;(all['*'] || []).map(function (handler) { handler(type, evt) })
+      ;(once[type] || []).map(function (handler) { handler(evt) })
+      ;(once['*'] || []).map(function (handler) { handler(type, evt) })
+    },
+
+    /**
+     * Clear the emitter by removing all handlers
+     *
+     * @memberof mitt
+     */
+    clear () {
+      all = {}
+      once = {}
+    },
+
+    get _listeners () {
+      return all
     }
   }
 }
@@ -84,7 +131,7 @@ function find (array, callback) {
  *
  * @param {Object} obj
  */
-function arrayFrom (obj) {
+function toArray (obj) {
   if (Array.from) return Array.from(obj)
   if (Array.isArray(obj)) return obj.slice(0)
 
@@ -94,6 +141,23 @@ function arrayFrom (obj) {
   for (let i = 0; i < obj.length; i++) items.push(obj[i])
 
   return items
+}
+
+/**
+ * Use this instead of Object.assign() for compatibility
+ *
+ * @param {Object} ...obj
+ */
+function extend (...objects) {
+  if (Object.assign) return Object.assign(...objects)
+  if (objects.length === 0) throw new TypeError('Cannot convert undefined or null to object')
+  if (objects.length === 1) return objects[0]
+
+  for (let key in objects[1]) {
+    objects[0][key] = objects[1][key]
+  }
+
+  return extend(objects[0], ...objects.slice(2))
 }
 
 // A Map of predefined types, in descending specificity order
@@ -128,7 +192,7 @@ const presetTypes = new Map([
     unserialize: value => JSON.parse(value)
   }],
   [ Object, {
-    validate: value => typeof value === 'object' && !Array.isArray(value),
+    validate: value => typeof value === 'object' && value !== null && !Array.isArray(value),
     serialize: value => JSON.stringify(value),
     unserialize: value => JSON.parse(value)
   }],
@@ -150,7 +214,7 @@ const presetTypes = new Map([
  * @return {Boolean}
  */
 function isPlainObject (value) {
-  return typeof value === 'object' && value.prototype == null
+  return typeof value === 'object' && value !== null && value.prototype == null
 }
 
 /**
@@ -173,7 +237,7 @@ function isCustomTypeConstraint (value) {
  * @return {Boolean}
  */
 function isValidSingleTypeConstraint (value) {
-  return has(arrayFrom(presetTypes.keys()), value) || isCustomTypeConstraint(value)
+  return has(toArray(presetTypes.keys()), value) || isCustomTypeConstraint(value)
 }
 
 /**
@@ -184,8 +248,8 @@ function isValidSingleTypeConstraint (value) {
  */
 function isValidTypeConstraint (value) {
   return Array.isArray(value)
-    ? (value.length && value.every(isValidSingleTypeConstraint))
-    : isValidSingleTypeConstraint(value)
+    ? (value.length && value.every(isValidSingleTypeConstraint) && value.some(constraint => constraint !== null))
+    : isValidSingleTypeConstraint(value) && value !== null
 }
 
 /**
@@ -203,7 +267,7 @@ function createMultiConstraintDetector (constraints) {
     constraints = [ constraints ]
   }
 
-  const specificityArray = arrayFrom(presetTypes.keys())
+  const specificityArray = toArray(presetTypes.keys())
 
   constraints = constraints
     .slice(0)
@@ -242,11 +306,26 @@ function createMultiConstraintDetector (constraints) {
 
 /**
  * Checks if a value is undefined
+ *
  * @param {Any} value
  * @return {Boolean}
  */
 function isUndef (value) {
   return typeof value === 'undefined'
+}
+
+/**
+ * Checks if an element matches a given selector
+ *
+ * @param {Element} el
+ * @param {String} selector
+ */
+function matches (el, selector) {
+  const proto = Element.prototype
+  const fn = proto.matches || proto.webkitMatchesSelector || proto.mozMatchesSelector || proto.msMatchesSelector || function (selector) {
+    return [].indexOf.call(document.querySelectorAll(selector), this) !== -1
+  }
+  return fn.call(el, selector)
 }
 
 /**
@@ -362,6 +441,11 @@ function getTypeConstraints (optionDef) {
 function validateOptionValue (value, optionDef, isSerialized = false) {
   const typeConstraints = getTypeConstraints(optionDef)
 
+  // If required, don't allow undefined
+  if (optionDef.required === true && typeof value === 'undefined') {
+    throw new Error('Invalid option removal')
+  }
+
   // If nullable type, allow undefined and null values
   if (value == null && has(typeConstraints, null)) {
     return isSerialized
@@ -404,6 +488,20 @@ function validateOptionValue (value, optionDef, isSerialized = false) {
 }
 
 /**
+ * Publishes a change over an event emitter
+ *
+ * @param {Object} emitter
+ * @param {String} option
+ * @param {Any} value
+ * @param {Any} oldValue
+ * @param {Boolean} initial
+ */
+function publishChange (emitter, option, value, oldValue, initial = false) {
+  emitter.emit('change', { option, value, oldValue, initial })
+  emitter.emit(`change:${option}`, { value, oldValue, initial })
+}
+
+/**
  * Gets the initial values of an HTML API, considering data-* attributes and default values
  *
  * @param {Element} element
@@ -412,6 +510,7 @@ function validateOptionValue (value, optionDef, isSerialized = false) {
  */
 function getInitialValues (element, optionsDef, emitter) {
   const values = Object.create(null)
+  const bufferedInitials = {}
 
   for (const [optionName, optionDef] of entries(optionsDef)) {
     const datasetValue = element.dataset[optionName]
@@ -425,22 +524,32 @@ function getInitialValues (element, optionsDef, emitter) {
       }
 
     // Fail on required
-    } else if (optionDef.required) {
-      window.requestAnimationFrame(() => {
-        emitter.emit('error', new Error(`Missing required option "${optionName}"`))
+    } else if (optionDef && optionDef.required) {
+      requestAnimationFrame(() => {
+        emitter.emit('error', {
+          type: 'missing-required',
+          message: `Missing required option "${optionName}"`,
+          details: optionName
+        })
       })
 
     // Use default value
-    } else if (typeof optionDef.default !== 'undefined') {
+    } else if (optionDef && typeof optionDef.default !== 'undefined') {
       values[optionName] = optionDef.default
 
-    // Use undefined
+    // Use null
     } else {
       values[optionName] = null
     }
+
+    // Saving timeout IDs prevents initial change from accidentally
+    bufferedInitials[optionName] = setTimeout(() => {
+      publishChange(emitter, optionName, values[optionName], null, true)
+      delete bufferedInitials[optionName]
+    }, 0)
   }
 
-  return values
+  return { values, bufferedInitials }
 }
 
 /**
@@ -464,7 +573,7 @@ function camel (kebab) {
 }
 
 /**
- * Creates a list of data attribetus to watch for a certain options definitions
+ * Creates a list of data attribtes to watch for a certain option's definitions
  *
  * @param {Object} optionsDef
  * @return {string[]}
@@ -476,13 +585,13 @@ function createOptionsAttrList (optionsDef) {
 /**
  * Defines an interface for getting/setting options programmatically
  *
- * @param {Object} optionsDef
  * @param {Element} element
+ * @param {Object} optionsDef
  * @param {Object} values
  * @param {Object} emitter
  * @return {Object}
  */
-function createOptionsDefInterface (optionsDef, element, values, emitter) {
+function createOptionsInterface (element, optionsDef, values, emitter) {
   const options = Object.create(null)
   for (const [optionName, optionDef] of entries(optionsDef)) {
     Object.defineProperty(options, optionName, {
@@ -493,11 +602,20 @@ function createOptionsDefInterface (optionsDef, element, values, emitter) {
 
           if (typeof serializedValue === 'string') {
             element.dataset[optionName] = serializedValue
+            values[optionName] = value
           } else {
             delete element.dataset[optionName]
+            delete values[optionName]
           }
         } catch (err) {
-          emitter.emit('error', new Error(`Error setting option "${optionName}": ${err.message}`))
+          emitter.emit('error', {
+            type: 'invalid-value-js',
+            details: {
+              option: optionName,
+              value
+            },
+            message: `Error setting option "${optionName}": ${err.message}`
+          })
         }
       }
     })
@@ -513,9 +631,9 @@ function createOptionsDefInterface (optionsDef, element, values, emitter) {
  * @param {Function} callback
  * @return {MutationObserver}
  */
-function observeElement (element, attributes, callback) {
+function observeAttributes (element, attributes, callback) {
   // create an observer instance
-  const observer = new window.MutationObserver(records => {
+  const observer = new MutationObserver(records => {
     for (const record of records) {
       if (record.type === 'attributes') {
         callback(record.attributeName.slice(5), record.oldValue)
@@ -525,6 +643,7 @@ function observeElement (element, attributes, callback) {
 
   observer.observe(element, {
     attributes: true,
+    attributeOldValue: true,
     attributeFilter: attributes
   })
 
@@ -541,25 +660,28 @@ function observeElement (element, attributes, callback) {
  */
 function createMutationHandler (element, optionsDef, values, emitter) {
   return (optionAttr, oldSerializedValue) => {
-    const option = camel(optionAttr)
-    const def = optionsDef[option]
+    const optionName = camel(optionAttr)
+    const def = optionsDef[optionName]
 
-    const newSerializedValue = element.dataset[option]
+    const newSerializedValue = element.dataset[optionName]
     if (newSerializedValue === oldSerializedValue) return
 
     try {
       const newUnserializedValue = validateOptionValue(newSerializedValue, def, true)
+      const oldUnserializedValue = validateOptionValue(oldSerializedValue, def, true)
 
-      const oldUnserializedValue = values[option]
-      values[option] = newUnserializedValue
+      values[optionName] = newUnserializedValue
 
-      emitter.emit('change', {
-        option,
-        oldValue: oldUnserializedValue,
-        value: newUnserializedValue
-      })
+      publishChange(emitter, optionName, newUnserializedValue, oldUnserializedValue)
     } catch (err) {
-      emitter.emit('error', new Error(`Error setting option "${option}" via HTML: ${err.message}`))
+      emitter.emit('error', {
+        type: 'invalid-value-html',
+        details: {
+          option: optionName,
+          value: newSerializedValue
+        },
+        message: `Error setting option "${optionName}" via HTML: ${err.message}`
+      })
     }
   }
 }
@@ -572,8 +694,8 @@ function createMutationHandler (element, optionsDef, values, emitter) {
  * @param {Object} values
  * @param {Object} emitter
  */
-function createElementObserver (element, optionsDef, values, emitter) {
-  return observeElement(
+function createAttributeObserver (element, optionsDef, values, emitter) {
+  return observeAttributes(
     element,
     createOptionsAttrList(optionsDef),
     createMutationHandler(element, optionsDef, values, emitter)
@@ -581,38 +703,72 @@ function createElementObserver (element, optionsDef, values, emitter) {
 }
 
 /**
- * Create an HTML API from a DOM Element and an option defintion
+ * Validate an element constraint
+ *
+ * @param {String|Element|Element[]|NodeList|HTMLCollection} constraint
+ */
+function validateElementConstraint (constraint) {
+  let elements = null
+  if (typeof constraint === 'string') {
+    elements = constraint
+  } else if (constraint instanceof Element) {
+    elements = [ constraint ]
+  } else {
+    if (constraint instanceof NodeList || constraint instanceof HTMLCollection) {
+      constraint = toArray(constraint)
+    }
+
+    if (Array.isArray(constraint)) {
+      if (constraint.every(node => node instanceof Element)) {
+        elements = constraint
+      } else {
+        elements = null
+      }
+    }
+  }
+
+  if (elements) {
+    return elements
+  } else {
+    throw new Error('Provided elements must either be a selector string, an Element, an array of Elements or a NodeList containing exclusively Element nodes')
+  }
+}
+
+/**
+ * Set up an element-based API
  *
  * @param {Element} element
  * @param {Object} optionsDef
- * @return {Object}
+ * @param {Object} parentEmitter
  */
-export default function htmlApi (element, optionsDef) {
-  if (!(element instanceof window.Element)) {
-    throw new Error('No valid Element given')
-  }
+function createElementBasedApi (element, optionsDef, parentEmitter) {
+  // Element-based event emitter
+  const localEmitter = mitt()
 
-  validateOptionsDefinition(optionsDef)
-
-  // Set up the event emitter
-  const emitter = mitt()
-
-  // Set initial values
-  const values = getInitialValues(element, optionsDef, emitter)
-
-  // Set up the MutationObserver
-  let observer = createElementObserver(element, optionsDef, values, emitter)
-
-  // The user-facing onChange interface
-  const onChange = Object.create(null)
-  emitter.on('change', ({ option, value, oldValue }) => {
-    if (typeof onChange[option] === 'function') onChange[option](value, oldValue)
+  // Delegate events to parent emitter
+  localEmitter.on('*', (type, evt) => {
+    parentEmitter.emit(type, extend({ element, elementApi }, evt))
   })
 
-  return {
-    options: createOptionsDefInterface(optionsDef, element, values, emitter),
+  // Set initial values
+  const { values, bufferedInitials } = getInitialValues(element, optionsDef, localEmitter)
 
-    onChange,
+  // Make sure to clear out buffered initials
+  for (const option in bufferedInitials) {
+    localEmitter.once(`change:${option}`, () => {
+      clearTimeout(bufferedInitials[option])
+      delete bufferedInitials[option]
+    })
+  }
+
+  // Set up the MutationObserver
+  const attributeObserver = createAttributeObserver(element, optionsDef, values, localEmitter)
+
+  // Set up the `options` interface
+  const optionsInterface = createOptionsInterface(element, optionsDef, values, localEmitter)
+
+  const elementApi = {
+    options: optionsInterface,
 
     /**
      * Adds an event listener
@@ -620,8 +776,19 @@ export default function htmlApi (element, optionsDef) {
      * @param {String} evt
      * @param {Function} listener
      */
-    on (evt, listener) {
-      emitter.on(evt, listener)
+    on (evt, listener, skip) {
+      localEmitter.on(evt, listener, skip)
+      return this
+    },
+
+    /**
+     * Adds a one-time event listener
+     *
+     * @param {String} evt
+     * @param {Function} listener
+     */
+    once (evt, listener, skip) {
+      localEmitter.once(evt, listener, skip)
       return this
     },
 
@@ -632,41 +799,157 @@ export default function htmlApi (element, optionsDef) {
      * @param {Function} listener
      */
     off (evt, listener) {
-      emitter.off(evt, listener)
+      localEmitter.off(evt, listener)
       return this
     },
 
     /**
-     * Merges in a new options definition
-     *
-     * @param {Object} newOptionsDef
-     */
-    merge (newOptionsDef) {
-      // Validate new options definition
-      validateOptionsDefinition(newOptionsDef)
-
-      // Amend original options definition
-      Object.assign(optionsDef, newOptionsDef)
-
-      // Amend original values, re-evaluating existing, overridden ones
-      const newInitialValues = getInitialValues(element, newOptionsDef, emitter)
-      Object.assign(values, newInitialValues)
-
-      // Override options interface
-      this.options = createOptionsDefInterface(optionsDef, element, values, emitter)
-
-      // Restart MutationObserver
-      observer.disconnect()
-      observer = createElementObserver(element, optionsDef, values, emitter)
-
-      return this
-    },
-
-    /**
-     * Destroys the API, in particular disconnecting the MutationObserver
+     * Destroy the attribute observer
      */
     destroy () {
-      observer.disconnect()
+      attributeObserver.disconnect()
+      localEmitter.clear()
+    }
+  }
+
+  return elementApi
+}
+
+/**
+ * Create an HTML API from a DOM Element and an option defintion
+ *
+ * @param {Object} optionsDef
+ * @return {Object}
+ */
+export default function htmlApi (optionsDef) {
+  validateOptionsDefinition(optionsDef)
+
+  return constraint => {
+    let elements = validateElementConstraint(constraint)
+    const observableSelector = typeof elements === 'string' && elements
+    if (observableSelector) elements = toArray(document.querySelectorAll(elements))
+
+    // Set up a list of element APIs
+    const elementApis = new Map()
+
+    // Set up the event emitter
+    const emitter = mitt()
+
+    // Register a MutationObserver
+    let elementObserver
+    if (observableSelector) {
+      elementObserver = new MutationObserver(mutations => {
+        for (const mutation of mutations) {
+          if (mutation.type === 'childList') {
+            const newNodes = toArray(mutation.addedNodes)
+              .filter(node =>
+                node instanceof Element &&
+                matches(node, observableSelector) &&
+                !elementApis.has(node)
+              )
+
+            for (const element of newNodes) {
+              const elementApi = createElementBasedApi(element, optionsDef, emitter)
+              elementApis.set(element, elementApi)
+              emitter.emit('newElement', { element, elementApi })
+            }
+
+            for (const removedNode of toArray(mutation.removedNodes)) {
+              if (!(removedNode instanceof Element)) continue
+              if (elementApis.has(removedNode)) {
+                elementApis.get(removedNode).destroy()
+                elementApis.delete(removedNode)
+              }
+            }
+          }
+        }
+      })
+
+      elementObserver.observe(document.documentElement, {
+        childList: true,
+        subtree: true
+      })
+    }
+
+    for (const element of elements) {
+      const elementApi = createElementBasedApi(element, optionsDef, emitter)
+      elementApis.set(element, elementApi)
+      setTimeout(function () {
+        emitter.emit('newElement', { element, elementApi })
+      }, 0)
+    }
+
+    return {
+      /**
+       * Gets all elements the API has been assigned to
+       */
+      get elements () {
+        return toArray(elementApis.keys())
+      },
+
+      /**
+       * Gets an element-based API
+       *
+       * @param {Element|String} constraint
+       */
+      for (constraint) {
+        let element
+        if (constraint instanceof Element) {
+          element = constraint
+        } else if (typeof constraint === 'string') {
+          element = document.querySelector(element)
+        } else {
+          throw new Error('Constraint must either be an Element or a selector string')
+        }
+        if (!element) throw new Error('No element found for the given selector')
+        if (!elementApis.has(element)) throw new Error('The given element does not have your API attached')
+
+        return elementApis.get(element)
+      },
+
+      /**
+       * Adds an event listener
+       *
+       * @param {String} evt
+       * @param {Function} listener
+       */
+      on (evt, listener, skip) {
+        emitter.on(evt, listener, skip)
+        return this
+      },
+
+      /**
+       * Adds a one-time event listener
+       *
+       * @param {String} evt
+       * @param {Function} listener
+       */
+      once (evt, listener, skip) {
+        emitter.once(evt, listener, skip)
+        return this
+      },
+
+      /**
+       * Removes an event listener
+       *
+       * @param {String} evt
+       * @param {Function} listener
+       */
+      off (evt, listener) {
+        emitter.off(evt, listener)
+        return this
+      },
+
+      /**
+       * Destroys the API, in particular disconnecting the MutationObservers
+       */
+      destroy () {
+        if (elementObserver) elementObserver.disconnect()
+        emitter.clear()
+        for (const elementApi of toArray(elementApis.values())) {
+          elementApi.destroy()
+        }
+      }
     }
   }
 }
@@ -678,26 +961,30 @@ htmlApi.Enum = (...values) => ({
 })
 
 const numGen = (min = -Infinity, max = Infinity, float = true) => ({
-  validate: value => (
-      float ||
-      Number.isInteger
-        ? Number.isInteger(value)
-        : (typeof value === 'number' && isFinite(value) && Math.floor(value) === value)
-    ) &&
-    value >= min && value <= max,
+  validate: value => {
+    if (typeof value !== 'number' || !isFinite(value)) return false
+    if (!float) {
+      if (Number.isInteger) {
+        if (!Number.isInteger(value)) return false
+      } else {
+        if (Math.floor(value) !== value) return false
+      }
+    }
+    return value >= min && value <= max
+  },
   serialize: value => String(value),
   unserialize: value => +value
 })
 
-htmlApi.Integer = Object.assign(numGen(-Infinity, Infinity, false), {
-  min: min => Object.assign(numGen(min, Infinity, false), {
+htmlApi.Integer = extend(numGen(-Infinity, Infinity, false), {
+  min: min => extend(numGen(min, Infinity, false), {
     max: max => numGen(min, max, false)
   }),
   max: max => numGen(-Infinity, max, false)
 })
 
-htmlApi.Float = Object.assign(numGen(-Infinity, Infinity), {
-  min: min => Object.assign(numGen(min, Infinity), {
+htmlApi.Float = extend(numGen(-Infinity, Infinity), {
+  min: min => extend(numGen(min, Infinity), {
     max: max => numGen(min, max)
   }),
   max: max => numGen(-Infinity, max)

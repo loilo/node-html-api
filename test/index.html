@@ -1,21 +1,59 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>HTML API browser test suite</title>
   <meta charset="utf-8">
+  <title>HTML API tests – Jasmine Spec Runner v2.6.4</title>
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <link rel="shortcut icon" type="image/png" href="lib/jasmine-2.6.4/jasmine_favicon.png">
+  <link rel="stylesheet" href="lib/jasmine-2.6.4/jasmine.css">
+  <style>
+    #testArea {
+      height: 0;
+      padding: 0;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .jasmine_html-reporter {
+      font-size: 15px;
+      font-family: 'Roboto Mono', Monaco, "Lucida Console", monospace;
+      line-height: 1.45;
+      font-weight: 300;
+    }
+
+    .jasmine_html-reporter .jasmine-symbol-summary li.jasmine-passed:before {
+      font-family: Monaco, "Lucida Console", monospace;
+    }
+
+    .jasmine-banner {
+      font-size: 11px;
+      line-height: 14px;
+    }
+  </style>
+
+  <script src="lib/jasmine-2.6.4/jasmine.js"></script>
+  <script src="lib/jasmine-2.6.4/jasmine-html.js"></script>
+  <script src="lib/jasmine-2.6.4/boot.js"></script>
+
+  <!-- source files -->
   <script src="../dist/browser.min.js"></script>
-  <script src="run-tests.js"></script>
-  <link rel="stylesheet" type="text/css" href="run-tests.css">
+
+  <!-- spec files -->
+  <script src="spec/SpecHelper.js"></script>
+  <script src="spec/CreationSpec.js"></script>
+  <script src="spec/InterfaceSpec.js"></script>
+  <script src="spec/TypingSpec.js"></script>
+  <script src="spec/RequiredSpec.js"></script>
+  <script src="spec/DefaultSpec.js"></script>
+
+  <script>
+    jasmine.DEFAULT_TIMEOUT_INTERVAL = 1000
+  </script>
+
 </head>
+
 <body>
-  <h1>Feature Test Suite</h1>
-  <p>This is suitable for evergreen browser as well as IE 11.</p>
-
-  <div id="test-area">
-    <button data-label="I'm a button"></button>
-  </div>
-
-  <table id="tests"></table>
+  <div id="testArea"></div>
 </body>
 </html>
