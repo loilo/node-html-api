@@ -182,6 +182,8 @@ That will make our button be labeled with a cheerful `I'm a magic button!`.
 
 If now, in any way, the button's `data-label` attribute value would be changed to `"I'm batman."`, the change listener will trigger and the button label will update accordingly.
 
+[You can try out this example on Codepen.](https://codepen.io/loilo/pen/Xaromw?editors=1011)
+
 > Note that, because we have set the `required` flag on the `label` option to `true`, we enforce a `data-label` attribute to always be set.
 > Removing the attribute in this setup would [raise an error](#error-handling).
 
