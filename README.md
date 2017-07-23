@@ -171,7 +171,8 @@ htmlApi({
 /*
  * The `change:label` event will tell whenever the `label` option
  * changes on any `.btn`.
- * It will also trigger when the API is first initialized on an element
+ * It will also trigger when the API is first applied to an element
+ * to get an option's initial value.
  */
 .on('change:label', event => {
   event.element.textContent = event.value
