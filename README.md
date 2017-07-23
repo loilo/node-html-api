@@ -612,8 +612,9 @@ where
     type: TypeConstraint,
 
     /*
-     * Tells if the data attribute belonging to this option must be set.
-     * If not set or set to `false`, the `default` option will be used.
+     * Tells if the data attribute belonging to this option must
+     * be set. If not set or set to `false`, the `default` option
+     * will be used.
      */
     required?: boolean,
 
@@ -664,8 +665,8 @@ where
 
       /*
        * The inverse of `serialize`: Converts a string back to the
-       * defined Type. If the string can not be successfully converted
-       * to the Type, this method should throw an Error.
+       * defined Type. If the string can not be successfully
+       * converted to the Type, this method should throw an Error.
        */
       unserialize (serializedValue: string): Type
     }
@@ -719,23 +720,56 @@ where
     /*
      * Adds a listener to the `change` or `error` event
      */
-    on ("change", listener: (event: OptionChangeEvent) => any, skip: number = 0): this
-    on ("change:[optionName]", listener: (event: ConcreteOptionChangeEvent) => any, skip: number = 0): this
-    on ("error", listener: (event: ErrorEvent) => any, skip: number = 0): this
+    on (
+      event: "change",
+      listener: (event: OptionChangeEvent) => any,
+      skip: number = 0
+    ): this
+    on (
+      event: "change:[optionName]",
+      listener: (event: ConcreteOptionChangeEvent) => any,
+      skip: number = 0
+    ): this
+    on (
+      event: "error",
+      listener: (event: ErrorEvent) => any,
+      skip: number = 0
+    ): this
 
     /*
      * Like `on`, but listeners detach themselves after first use
      */
-    once ("change", listener: (event: OptionChangeEvent) => any, skip: number = 0): this
-    once ("change:[optionName]", listener: (event: ConcreteOptionChangeEvent) => any, skip: number = 0): this
-    once ("error", listener: (event: ErrorEvent) => any, skip: number = 0): this
+    once (
+      event: "change",
+      listener: (event: OptionChangeEvent) => any,
+      skip: number = 0
+    ): this
+    once (
+      event: "change:[optionName]",
+      listener: (event: ConcreteOptionChangeEvent) => any,
+      skip: number = 0
+    ): this
+    once (
+      event: "error",
+      listener: (event: ErrorEvent) => any,
+      skip: number = 0
+    ): this
 
     /*
      * Removes listeners
      */
-    off ("change", listener: (event: OptionChangeEvent) => any): this
-    off ("change:[optionName]", listener: (event: ConcreteOptionChangeEvent) => any): this
-    off ("error", listener: (event: ErrorEvent) => any): this
+    off (
+      event: "change",
+      listener: (event: OptionChangeEvent) => any
+    ): this
+    off (
+      event: "change:[optionName]",
+      listener: (event: ConcreteOptionChangeEvent) => any
+    ): this
+    off (
+      event: "error",
+      listener: (event: ErrorEvent) => any
+    ): this
 
     /*
      * Destroys the API, disconnecting all MutationObservers
@@ -757,23 +791,56 @@ where
     /*
      * Adds a listener to the `change` or `error` event
      */
-    on ("change", listener: (event: ElementRelatedEvent & OptionChangeEvent) => any, skip: number = 0): this
-    on ("change:[optionName]", listener: (event: ElementRelatedEvent & ConcreteOptionChangeEvent) => any, skip: number = 0): this
-    on ("error", listener: (event: ElementRelatedEvent & ErrorEvent) => any, skip: number = 0): this
+    on (
+      event: "change",
+      listener: (event: OptionChangeEvent) => any,
+      skip: number = 0
+    ): this
+    on (
+      event: "change:[optionName]",
+      listener: (event: ConcreteOptionChangeEvent) => any,
+      skip: number = 0
+    ): this
+    on (
+      event: "error",
+      listener: (event: ErrorEvent) => any,
+      skip: number = 0
+    ): this
 
     /*
      * Like `on`, but listeners detach themselves after first use
      */
-    once ("change", listener: (event: ElementRelatedEvent & OptionChangeEvent) => any, skip: number = 0): this
-    once ("change:[optionName]", listener: (event: ElementRelatedEvent & ConcreteOptionChangeEvent) => any, skip: number = 0): this
-    once ("error", listener: (event: ElementRelatedEvent & ErrorEvent) => any, skip: number = 0): this
+    once (
+      event: "change",
+      listener: (event: OptionChangeEvent) => any,
+      skip: number = 0
+    ): this
+    once (
+      event: "change:[optionName]",
+      listener: (event: ConcreteOptionChangeEvent) => any,
+      skip: number = 0
+    ): this
+    once (
+      event: "error",
+      listener: (event: ErrorEvent) => any,
+      skip: number = 0
+    ): this
 
     /*
      * Removes listeners
      */
-    off ("change", listener: (event: ElementRelatedEvent & OptionChangeEvent) => any): this
-    off ("change:[optionName]", listener: (event: ElementRelatedEvent & ConcreteOptionChangeEvent) => any): this
-    off ("error", listener: (event: ElementRelatedEvent & ErrorEvent) => any): this
+    off (
+      event: "change",
+      listener: (event: OptionChangeEvent) => any
+    ): this
+    off (
+      event: "change:[optionName]",
+      listener: (event: ConcreteOptionChangeEvent) => any
+    ): this
+    off (
+      event: "error",
+      listener: (event: ErrorEvent) => any
+    ): this
 
     /*
      * Destroys the API, disconnecting all MutationObservers
@@ -820,7 +887,10 @@ where
 
 
   interface ErrorEvent {
-    type: "missing-required" | "invalid-value-js" | "invalid-value-html"
+    type:
+      "missing-required" |
+      "invalid-value-js" |
+      "invalid-value-html"
 
     /*
      * A clear, English error message
