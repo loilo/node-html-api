@@ -134,6 +134,7 @@ describe('Using the API interface with config `{ myOption: String }` applied to 
   describe('setting the `elementApi.options.myOption` property to "foo"', function () {
     beforeEach(function () {
       setTimeout(function () {
+        console.log(elementApi)
         elementApi.options.myOption = 'foo'
       }, 0)
     })
@@ -145,6 +146,7 @@ describe('Using the API interface with config `{ myOption: String }` applied to 
         expect(event.option).toBe('myOption')
         expect(event.value).toBe('foo')
         expect(event.oldValue).toBe(null)
+        console.log('Done')
         done()
       })
     })

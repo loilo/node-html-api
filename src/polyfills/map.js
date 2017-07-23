@@ -2,7 +2,7 @@
  * A very primitive Map polyfill which does *not* override the global Map
  * Is concatenated with the package's source code
  */
-var Map
+let Map
 
 if (!window.Map || !window.Map.prototype.entries) {
   /* eslint-disable no-extend-native */
@@ -82,3 +82,5 @@ if (!window.Map || !window.Map.prototype.entries) {
 } else {
   Map = window.Map
 }
+
+export default Map

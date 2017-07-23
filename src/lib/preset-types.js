@@ -1,3 +1,5 @@
+import Map from '../polyfills/map'
+
 // A Map of predefined types, in descending specificity order
 export default new Map([
   [ null, {

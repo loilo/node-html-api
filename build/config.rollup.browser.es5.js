@@ -1,5 +1,5 @@
 export default {
-  entry: 'src/tmp-transpiled-full.js',
+  entry: 'tmp/html-api.js',
   format: 'iife',
   moduleName: 'htmlApi',
   onwarn () {}

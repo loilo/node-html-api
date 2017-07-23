@@ -1,5 +1,5 @@
 export default {
-  entry: 'src/html-api.js',
+  entry: 'tmp/html-api.js',
   format: 'iife',
   moduleName: 'htmlApi',
   dest: 'dist/cjs.js',

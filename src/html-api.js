@@ -1,5 +1,6 @@
 /* global Element, requestAnimationFrame, MutationObserver, NodeList, HTMLCollection */
 
+import Map from './polyfills/map'
 import mitt from './lib/mitt'
 import {
   isUndef,
