@@ -525,8 +525,8 @@ function createElementBasedApi (element, optionsDef, parentEmitter) {
      * @param {String} evt
      * @param {Function} listener
      */
-    on (evt, listener, skip) {
-      localEmitter.on(evt, listener, skip)
+    on (evt, listener) {
+      localEmitter.on(evt, listener)
       return this
     },
 
@@ -536,8 +536,8 @@ function createElementBasedApi (element, optionsDef, parentEmitter) {
      * @param {String} evt
      * @param {Function} listener
      */
-    once (evt, listener, skip) {
-      localEmitter.once(evt, listener, skip)
+    once (evt, listener) {
+      localEmitter.once(evt, listener)
       return this
     },
 
@@ -662,8 +662,8 @@ export default function htmlApi (optionsDef) {
        * @param {String} evt
        * @param {Function} listener
        */
-      on (evt, listener, skip) {
-        emitter.on(evt, listener, skip)
+      on (evt, listener) {
+        emitter.on(evt, listener)
         return this
       },
 
@@ -673,8 +673,8 @@ export default function htmlApi (optionsDef) {
        * @param {String} evt
        * @param {Function} listener
        */
-      once (evt, listener, skip) {
-        emitter.once(evt, listener, skip)
+      once (evt, listener) {
+        emitter.once(evt, listener)
         return this
       },
 

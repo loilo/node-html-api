@@ -1,3 +1,13 @@
+function deferListener (skipNr, emitter, type, event, listener) {
+  if (skipNr > 0) {
+    emitter.once(event, function () {
+      deferListener(skipNr - 1, emitter, type, event, listener)
+    })
+  } else {
+    emitter[type](event, listener)
+  }
+}
+
 function matchProps (actual, objectProps, arrayProps, fnProps) {
   var missingObjectProps = objectProps.filter(function (prop) { return typeof actual[prop] !== 'object' })
   var missingArrayProps = arrayProps.filter(function (prop) { return !Array.isArray(actual[prop]) })

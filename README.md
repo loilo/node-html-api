@@ -722,18 +722,15 @@ where
      */
     on (
       event: "change",
-      listener: (event: OptionChangeEvent) => any,
-      skip: number = 0
+      listener: (event: OptionChangeEvent) => any
     ): this
     on (
       event: "change:[optionName]",
-      listener: (event: ConcreteOptionChangeEvent) => any,
-      skip: number = 0
+      listener: (event: ConcreteOptionChangeEvent) => any
     ): this
     on (
       event: "error",
-      listener: (event: ErrorEvent) => any,
-      skip: number = 0
+      listener: (event: ErrorEvent) => any
     ): this
 
     /*
@@ -741,18 +738,15 @@ where
      */
     once (
       event: "change",
-      listener: (event: OptionChangeEvent) => any,
-      skip: number = 0
+      listener: (event: OptionChangeEvent) => any
     ): this
     once (
       event: "change:[optionName]",
-      listener: (event: ConcreteOptionChangeEvent) => any,
-      skip: number = 0
+      listener: (event: ConcreteOptionChangeEvent) => any
     ): this
     once (
       event: "error",
-      listener: (event: ErrorEvent) => any,
-      skip: number = 0
+      listener: (event: ErrorEvent) => any
     ): this
 
     /*
@@ -793,18 +787,15 @@ where
      */
     on (
       event: "change",
-      listener: (event: OptionChangeEvent) => any,
-      skip: number = 0
+      listener: (event: OptionChangeEvent) => any
     ): this
     on (
       event: "change:[optionName]",
-      listener: (event: ConcreteOptionChangeEvent) => any,
-      skip: number = 0
+      listener: (event: ConcreteOptionChangeEvent) => any
     ): this
     on (
       event: "error",
-      listener: (event: ErrorEvent) => any,
-      skip: number = 0
+      listener: (event: ErrorEvent) => any
     ): this
 
     /*
@@ -812,18 +803,15 @@ where
      */
     once (
       event: "change",
-      listener: (event: OptionChangeEvent) => any,
-      skip: number = 0
+      listener: (event: OptionChangeEvent) => any
     ): this
     once (
       event: "change:[optionName]",
-      listener: (event: ConcreteOptionChangeEvent) => any,
-      skip: number = 0
+      listener: (event: ConcreteOptionChangeEvent) => any
     ): this
     once (
       event: "error",
-      listener: (event: ErrorEvent) => any,
-      skip: number = 0
+      listener: (event: ErrorEvent) => any
     ): this
 
     /*

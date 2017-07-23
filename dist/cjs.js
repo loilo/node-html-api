@@ -18,15 +18,8 @@ function mitt (all, once) {
      * @param  {Function} handler Function to call in response to given event
      * @memberOf mitt
      */
-    on (type, handler, skip = 0) {
-      if (skip === 0) {
-        (all[type] || (all[type] = [])).push(handler);
-      } else {
-        var self = this;
-        this.once(type, function () {
-          self.on(type, handler);
-        }, skip - 1);
-      }
+    on (type, handler) {
+      (all[type] || (all[type] = [])).push(handler);
     },
 
     /**
@@ -36,14 +29,8 @@ function mitt (all, once) {
      * @param  {Function} handler Function to call in response to given event
      * @memberOf mitt
      */
-    once (type, handler, skip = 0) {
-      if (skip === 0) {
-        (once[type] || (once[type] = [])).push(handler);
-      } else {
-        var self = this;(once[type] || (once[type] = [])).push(function () {
-          self.once(type, handler, skip - 1);
-        });
-      }
+    once (type, handler) {
+      (once[type] || (once[type] = [])).push(handler);
     },
 
     /**
@@ -798,8 +785,8 @@ function createElementBasedApi (element, optionsDef, parentEmitter) {
      * @param {String} evt
      * @param {Function} listener
      */
-    on (evt, listener, skip) {
-      localEmitter.on(evt, listener, skip);
+    on (evt, listener) {
+      localEmitter.on(evt, listener);
       return this
     },
 
@@ -809,8 +796,8 @@ function createElementBasedApi (element, optionsDef, parentEmitter) {
      * @param {String} evt
      * @param {Function} listener
      */
-    once (evt, listener, skip) {
-      localEmitter.once(evt, listener, skip);
+    once (evt, listener) {
+      localEmitter.once(evt, listener);
       return this
     },
 
@@ -935,8 +922,8 @@ function htmlApi (optionsDef) {
        * @param {String} evt
        * @param {Function} listener
        */
-      on (evt, listener, skip) {
-        emitter.on(evt, listener, skip);
+      on (evt, listener) {
+        emitter.on(evt, listener);
         return this
       },
 
@@ -946,8 +933,8 @@ function htmlApi (optionsDef) {
        * @param {String} evt
        * @param {Function} listener
        */
-      once (evt, listener, skip) {
-        emitter.once(evt, listener, skip);
+      once (evt, listener) {
+        emitter.once(evt, listener);
         return this
       },
 

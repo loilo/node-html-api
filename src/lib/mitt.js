@@ -15,15 +15,8 @@ export default function mitt (all, once) {
      * @param  {Function} handler Function to call in response to given event
      * @memberOf mitt
      */
-    on (type, handler, skip = 0) {
-      if (skip === 0) {
-        (all[type] || (all[type] = [])).push(handler)
-      } else {
-        var self = this
-        this.once(type, function () {
-          self.on(type, handler)
-        }, skip - 1)
-      }
+    on (type, handler) {
+      (all[type] || (all[type] = [])).push(handler)
     },
 
     /**
@@ -33,15 +26,8 @@ export default function mitt (all, once) {
      * @param  {Function} handler Function to call in response to given event
      * @memberOf mitt
      */
-    once (type, handler, skip = 0) {
-      if (skip === 0) {
-        (once[type] || (once[type] = [])).push(handler)
-      } else {
-        var self = this
-        ;(once[type] || (once[type] = [])).push(function () {
-          self.once(type, handler, skip - 1)
-        })
-      }
+    once (type, handler) {
+      (once[type] || (once[type] = [])).push(handler)
     },
 
     /**

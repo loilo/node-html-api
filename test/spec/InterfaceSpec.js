@@ -102,32 +102,32 @@ describe('Using the API interface with config `{ myOption: String }` applied to 
     })
 
     it('should trigger `change` with appropriate payload on the API', function (done) {
-      api.on('change', function (event) {
+      deferListener(1, api, 'on', 'change', function (event) {
         if (event.initial) return
         expect(event.element).toBe(window.testBtn)
         expect(event.option).toBe('myOption')
         expect(event.value).toBe(null)
         expect(event.oldValue).toBe('foo')
         done()
-      }, 1)
+      })
     })
 
     it('should trigger `change` with appropriate payload on the element-based API', function (done) {
-      api.on('change', function (event) {
+      deferListener(1, api, 'on', 'change', function (event) {
         if (event.initial) return
         expect(event.option).toBe('myOption')
         expect(event.value).toBe(null)
         expect(event.oldValue).toBe('foo')
         done()
-      }, 1)
+      })
     })
 
     it('should set `elementApi.options.myOption` to `null`', function (done) {
-      api.on('change', function (event) {
+      deferListener(1, api, 'on', 'change', function (event) {
         if (event.initial) return
         expect(elementApi.options.myOption).toBeNull()
         done()
-      }, 1)
+      })
     })
   })
 
