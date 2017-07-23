@@ -534,9 +534,9 @@ The same goes for `api.on('change')`.
 
 #### New elements
 
-If you applied your created HTML API to a selector string instead of a concrete element, this package will set up a [MutationObserver](https://developer.mozilla.org/docs/Web/API/MutationObserver) to keep track of new elements on the website that may match the selector.
+If you applied your created HTML API to a selector string instead of a concrete element, this package will set up a [MutationObserver](https://developer.mozilla.org/docs/Web/API/MutationObserver) to keep track of new elements on the website that match the selector.
 
-When such a value enters the site's DOM, it will trigger a `newElement` event on the `api`:
+When such an item enters the site's DOM, it will trigger a `newElement` event on the `api`:
 
 ```javascript
 api.on('newElement', event => {
