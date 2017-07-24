@@ -44,7 +44,7 @@
       "dist/",
       "build/",
       "test/",
-      "tmp-*"
+      "tmp/"
     ]
   }
 }
