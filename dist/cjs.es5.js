@@ -1,4 +1,3 @@
-var htmlApi = (function () {
 'use strict';
 
 /**
@@ -1152,6 +1151,4 @@ htmlApi.Float = extend(numGen(-Infinity, Infinity), {
   max: function (max) { return numGen(-Infinity, max); }
 });
 
-return htmlApi;
-
-}());
+module.exports = htmlApi;

@@ -1,7 +1,6 @@
 export default {
   entry: 'tmp/html-api.js',
-  format: 'iife',
-  moduleName: 'htmlApi',
+  format: 'cjs',
   dest: 'dist/cjs.js',
   onwarn () {}
 }
