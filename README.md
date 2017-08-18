@@ -111,19 +111,27 @@ You can use this package in your browser with one of the following snippets:
 * The most common version. Compiled to ES5, runs in all major browsers down to IE 11:
 
   ```html
-  <script src="node_modules/dist/browser.min.js"></script>
+  <script src="node_modules/html-api/dist/browser.min.js"></script>
+
+  <!-- or from CDN: -->
+
+  <script src="https://unpkg.com/html-api"></script>
   ```
 
 * Not transpiled to ES5, runs in browsers that support ES2015:
 
   ```html
-  <script src="node_modules/dist/browser.es2015.min.js"></script>
+  <script src="node_modules/html-api/dist/browser.es2015.min.js"></script>
+
+  <!-- or from CDN: -->
+
+  <script src="https://unpkg.com/html-api/dist/browser.es2015.min.js"></script>
   ```
 
 * If you're really living on the bleeding edge and use ES modules directly in the browser, you can `import` the package as well:
 
   ```javascript
-  import htmlApi from "./node_modules/dist/browser.module.min.js"
+  import htmlApi from "./node_modules/html-api/dist/browser.module.min.js"
   ```
 
   As opposed to the snippets above, this will not create a global `htmlApi` function.
@@ -134,7 +142,7 @@ You can use this package in your browser with one of the following snippets:
 To make this package part of your build chain, you can `require` it in Node:
 
 ```javascript
-const htmlApi = require('html-api/dist/cjs')
+const htmlApi = require('html-api')
 ```
 
 If you need this to work in Node.js v4 or below, try this instead:

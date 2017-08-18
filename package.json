@@ -46,5 +46,6 @@
       "test/",
       "tmp/"
     ]
-  }
+  },
+  "browser": "./dist/browser.min.js"
 }
