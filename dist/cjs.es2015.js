@@ -4,7 +4,7 @@
  * A very primitive Map polyfill which does *not* override the global Map
  * Is concatenated with the package's source code
  */
-var Map;
+let Map;
 
 if (!window.Map || !window.Map.prototype.entries) {
   /* eslint-disable no-extend-native */
@@ -104,7 +104,7 @@ function mitt (all, once) {
      * @param  {Function} handler Function to call in response to given event
      * @memberOf mitt
      */
-    on: function on (type, handler) {
+    on (type, handler) {
       (all[type] || (all[type] = [])).push(handler);
     },
 
@@ -115,7 +115,7 @@ function mitt (all, once) {
      * @param  {Function} handler Function to call in response to given event
      * @memberOf mitt
      */
-    once: function once$1 (type, handler) {
+    once (type, handler) {
       (once[type] || (once[type] = [])).push(handler);
     },
 
@@ -126,7 +126,7 @@ function mitt (all, once) {
      * @param  {Function} handler Handler function to remove
      * @memberOf mitt
      */
-    off: function off (type, handler) {
+    off (type, handler) {
       if (all[type]) {
         all[type].splice(all[type].indexOf(handler) >>> 0, 1);
       }
@@ -143,7 +143,7 @@ function mitt (all, once) {
      * @param {Any} [evt]  Any value (object is recommended and powerful), passed to each handler
      * @memberof mitt
      */
-    emit: function emit (type, evt) {
+    emit (type, evt) {
       (all[type] || []).map(function (handler) { handler(evt); })
       ;(all['*'] || []).map(function (handler) { handler(type, evt); })
       ;(once[type] || []).map(function (handler) { handler(evt); })
@@ -155,7 +155,7 @@ function mitt (all, once) {
      *
      * @memberof mitt
      */
-    clear: function clear () {
+    clear () {
       all = {};
       once = {};
     },
@@ -189,7 +189,7 @@ function isUndef (value) {
  * @return {String}
  */
 function kebab (camel) {
-  return camel.replace(/([A-Z])/g, function (matches, char) { return '-' + char.toLowerCase(); })
+  return camel.replace(/([A-Z])/g, (matches, char) => '-' + char.toLowerCase())
 }
 
 /**
@@ -199,7 +199,7 @@ function kebab (camel) {
  * @return {String}
  */
 function camel (kebab) {
-  return kebab.replace(/-([a-z])/g, function (matches, char) { return char.toUpperCase(); })
+  return kebab.replace(/-([a-z])/g, (matches, char) => char.toUpperCase())
 }
 
 /*
@@ -225,9 +225,9 @@ function has (array, value) {
  * @param {Function} callback
  */
 function find (array, callback) {
-  if (array.find) { return array.find(callback) }
-  for (var i = 0; i < array.length; i++) {
-    if (callback(array[i], i, array)) { return array[i] }
+  if (array.find) return array.find(callback)
+  for (let i = 0; i < array.length; i++) {
+    if (callback(array[i], i, array)) return array[i]
   }
   return undefined
 }
@@ -238,13 +238,13 @@ function find (array, callback) {
  * @param {Object} obj
  */
 function toArray (obj) {
-  if (Array.from) { return Array.from(obj) }
-  if (Array.isArray(obj)) { return obj.slice(0) }
+  if (Array.from) return Array.from(obj)
+  if (Array.isArray(obj)) return obj.slice(0)
 
   // If Array.from is not defined, we can safely assume that we use
   // our own Map implementation and therefore the following is fine.
-  var items = [];
-  for (var i = 0; i < obj.length; i++) { items.push(obj[i]); }
+  const items = [];
+  for (let i = 0; i < obj.length; i++) items.push(obj[i]);
 
   return items
 }
@@ -268,7 +268,7 @@ function isPlainObject (value) {
  * @param {Object} obj
  */
 function entries (obj) {
-  return Object.keys(obj).map(function (key) { return [ key, obj[key] ]; })
+  return Object.keys(obj).map(key => [ key, obj[key] ])
 }
 
 /**
@@ -276,19 +276,16 @@ function entries (obj) {
  *
  * @param {Object} ...obj
  */
-function extend () {
-  var objects = [], len = arguments.length;
-  while ( len-- ) objects[ len ] = arguments[ len ];
+function extend (...objects) {
+  if (Object.assign) return Object.assign(...objects)
+  if (objects.length === 0) throw new TypeError('Cannot convert undefined or null to object')
+  if (objects.length === 1) return objects[0]
 
-  if (Object.assign) { return Object.assign.apply(Object, objects) }
-  if (objects.length === 0) { throw new TypeError('Cannot convert undefined or null to object') }
-  if (objects.length === 1) { return objects[0] }
-
-  for (var key in objects[1]) {
+  for (let key in objects[1]) {
     objects[0][key] = objects[1][key];
   }
 
-  return extend.apply(void 0, [ objects[0] ].concat( objects.slice(2) ))
+  return extend(objects[0], ...objects.slice(2))
 }
 
 /*
@@ -302,8 +299,8 @@ function extend () {
  * @param {String} selector
  */
 function matches (el, selector) {
-  var proto = Element.prototype;
-  var fn = proto.matches || proto.webkitMatchesSelector || proto.mozMatchesSelector || proto.msMatchesSelector || function (selector) {
+  const proto = Element.prototype;
+  const fn = proto.matches || proto.webkitMatchesSelector || proto.mozMatchesSelector || proto.msMatchesSelector || function (selector) {
     return [].indexOf.call(document.querySelectorAll(selector), this) !== -1
   };
   return fn.call(el, selector)
@@ -312,14 +309,14 @@ function matches (el, selector) {
 // A Map of predefined types, in descending specificity order
 var presetTypes = new Map$1([
   [ null, {
-    validate: function (value) { return value == null; },
-    serialize: function (value) { return 'null'; },
-    unserialize: function (value) { return JSON.parse(value); }
+    validate: value => value == null,
+    serialize: value => 'null',
+    unserialize: value => JSON.parse(value)
   }],
   [ Boolean, {
-    validate: function (value) { return typeof value === 'boolean'; },
-    serialize: function (value) { return value ? '' : undefined; },
-    unserialize: function (value) {
+    validate: value => typeof value === 'boolean',
+    serialize: value => value ? '' : undefined,
+    unserialize: value => {
       if (typeof value === 'undefined' || value === 'false') {
         return false
       }
@@ -331,29 +328,29 @@ var presetTypes = new Map$1([
     }
   }],
   [ Number, {
-    validate: function (value) { return typeof value === 'number' && !isNaN(value); },
-    serialize: function (number) { return String(number); },
-    unserialize: function (value) { return +value; }
+    validate: value => typeof value === 'number' && !isNaN(value),
+    serialize: number => String(number),
+    unserialize: value => +value
   }],
   [ Array, {
-    validate: function (value) { return Array.isArray(value); },
-    serialize: function (value) { return JSON.stringify(value); },
-    unserialize: function (value) { return JSON.parse(value); }
+    validate: value => Array.isArray(value),
+    serialize: value => JSON.stringify(value),
+    unserialize: value => JSON.parse(value)
   }],
   [ Object, {
-    validate: function (value) { return typeof value === 'object' && value !== null && !Array.isArray(value); },
-    serialize: function (value) { return JSON.stringify(value); },
-    unserialize: function (value) { return JSON.parse(value); }
+    validate: value => typeof value === 'object' && value !== null && !Array.isArray(value),
+    serialize: value => JSON.stringify(value),
+    unserialize: value => JSON.parse(value)
   }],
   [ Function, {
-    validate: function (value) { return typeof value === 'function'; },
-    serialize: function (value) { return String(value); },
-    unserialize: function (value) { return eval(("(" + value + ")")); }
+    validate: value => typeof value === 'function',
+    serialize: value => String(value),
+    unserialize: value => /* eslint-disable no-eval */ eval(`(${value})`)
   }],
   [ String, {
-    validate: function (value) { return typeof value === 'string'; },
-    serialize: function (value) { return value; },
-    unserialize: function (value) { return value; }
+    validate: value => typeof value === 'string',
+    serialize: value => value,
+    unserialize: value => value
   }]
 ]);
 
@@ -390,7 +387,7 @@ function isValidSingleTypeConstraint (value) {
  */
 function isValidTypeConstraint (value) {
   return Array.isArray(value)
-    ? (value.length && value.every(isValidSingleTypeConstraint) && value.some(function (constraint) { return constraint !== null; }))
+    ? (value.length && value.every(isValidSingleTypeConstraint) && value.some(constraint => constraint !== null))
     : isValidSingleTypeConstraint(value) && value !== null
 }
 
@@ -409,31 +406,32 @@ function createMultiConstraintDetector (constraints) {
     constraints = [ constraints ];
   }
 
-  var specificityArray = toArray(presetTypes.keys());
+  const specificityArray = toArray(presetTypes.keys());
 
   constraints = constraints
     .slice(0)
     // Sort constraints to match the defined specificity order
-    .sort(function (a, b) {
-      var indexA = specificityArray.indexOf(a);
-      var indexB = specificityArray.indexOf(b);
+    .sort((a, b) => {
+      const indexA = specificityArray.indexOf(a);
+      const indexB = specificityArray.indexOf(b);
 
-      if (indexA === indexB) { return 0 }
-      if (indexA === -1) { return -1 }
-      if (indexB === -1) { return 1 }
+      if (indexA === indexB) return 0
+      if (indexA === -1) return -1
+      if (indexB === -1) return 1
 
-      if (indexA < indexB) { return -1 }
+      if (indexA < indexB) return -1
 
       return 1
     })
     // Fetch the constraint object itself
-    .map(function (constraint) { return presetTypes.has(constraint) ? presetTypes.get(constraint) : constraint; }
+    .map(constraint =>
+      presetTypes.has(constraint) ? presetTypes.get(constraint) : constraint
     );
 
   // Generate the function
-  return function (value, serialized) { return find(constraints, function (constraint) {
+  return (value, serialized) => find(constraints, constraint => {
     try {
-      var unserializedValue = value;
+      let unserializedValue = value;
       if (serialized) {
         unserializedValue = constraint.unserialize(value);
       }
@@ -442,7 +440,7 @@ function createMultiConstraintDetector (constraints) {
     } catch (err) {
       return false
     }
-  }); }
+  })
 }
 
 /**
@@ -453,7 +451,7 @@ function createMultiConstraintDetector (constraints) {
  */
 function validateOptionDefinition (optionDef) {
   // Definition is just a type constraint
-  if (isValidTypeConstraint(optionDef)) { return true }
+  if (isValidTypeConstraint(optionDef)) return true
 
   // Definition is an object
   if (isPlainObject(optionDef)) {
@@ -462,7 +460,7 @@ function validateOptionDefinition (optionDef) {
       throw Error('Definition must have a valid type constraint')
     }
 
-    var detectTypeConstraint = createMultiConstraintDetector(optionDef.type);
+    const detectTypeConstraint = createMultiConstraintDetector(optionDef.type);
 
     // Required and default not allowed at the same time
     if (optionDef.required && !isUndef(optionDef.default)) {
@@ -500,26 +498,22 @@ function validateOptionDefinition (optionDef) {
  * @param {Object} optionDef
  */
 function validateOptionsDefinition (obj) {
-  if (!isPlainObject(obj)) { throw new Error('Options definition must be a plain object') }
+  if (!isPlainObject(obj)) throw new Error('Options definition must be a plain object')
 
-  for (var i = 0, list = entries(obj); i < list.length; i += 1) {
-    var ref = list[i];
-    var optionName = ref[0];
-    var optionDef = ref[1];
-
+  for (const [optionName, optionDef] of entries(obj)) {
     try {
       validateOptionDefinition(optionDef);
 
       // Make simple types nullable
       if (isValidTypeConstraint(optionDef)) {
         if (Array.isArray(optionDef)) {
-          if (!has(optionDef, null)) { optionDef.push(null); }
+          if (!has(optionDef, null)) optionDef.push(null);
         } else if (optionDef !== null) {
           obj[optionName] = [ optionDef, null ];
         }
       }
     } catch (err) {
-      throw new Error(("Option definition for option \"" + optionName + "\" failed: " + (err.message)))
+      throw new Error(`Option definition for option "${optionName}" failed: ${err.message}`)
     }
   }
 }
@@ -559,10 +553,8 @@ function getTypeConstraints (optionDef) {
  * @throws {Error} If the value does not fullfill the `optionDef` constraints
  * @return {Any}
  */
-function validateOptionValue (value, optionDef, isSerialized) {
-  if ( isSerialized === void 0 ) isSerialized = false;
-
-  var typeConstraints = getTypeConstraints(optionDef);
+function validateOptionValue (value, optionDef, isSerialized = false) {
+  const typeConstraints = getTypeConstraints(optionDef);
 
   // If required, don't allow undefined
   if (optionDef.required === true && typeof value === 'undefined') {
@@ -576,34 +568,34 @@ function validateOptionValue (value, optionDef, isSerialized) {
       : 'null'
   }
 
-  var oppositeValue;
+  let oppositeValue;
 
-  var detectTypeConstraint = createMultiConstraintDetector(typeConstraints);
+  const detectTypeConstraint = createMultiConstraintDetector(typeConstraints);
 
   // Serialized value
   if (isSerialized) {
     // Detect correct constraint off of array
-    var typeConstraint = detectTypeConstraint(value, true);
+    const typeConstraint = detectTypeConstraint(value, true);
 
     try {
       oppositeValue = typeConstraint.unserialize(value);
     } catch (e) {
-      throw new Error(("Invalid serialized option value \"" + value + "\""))
+      throw new Error(`Invalid serialized option value "${value}"`)
     }
 
     if (!typeConstraint.validate(oppositeValue)) {
-      throw new Error(("Invalid serialized option value \"" + value + "\""))
+      throw new Error(`Invalid serialized option value "${value}"`)
     }
 
   // Typed value
   } else {
     // Detect correct constraint off of array
-    var typeConstraint$1 = detectTypeConstraint(value, false);
+    const typeConstraint = detectTypeConstraint(value, false);
 
-    if (isUndef(typeConstraint$1) || !typeConstraint$1.validate(value)) {
-      throw new Error(("Invalid option value \"" + value + "\""))
+    if (isUndef(typeConstraint) || !typeConstraint.validate(value)) {
+      throw new Error(`Invalid option value "${value}"`)
     } else {
-      oppositeValue = typeConstraint$1.serialize(value);
+      oppositeValue = typeConstraint.serialize(value);
     }
   }
 
@@ -619,11 +611,9 @@ function validateOptionValue (value, optionDef, isSerialized) {
  * @param {Any} oldValue
  * @param {Boolean} initial
  */
-function publishChange (emitter, option, value, oldValue, initial) {
-  if ( initial === void 0 ) initial = false;
-
-  emitter.emit('change', { option: option, value: value, oldValue: oldValue, initial: initial });
-  emitter.emit(("change:" + option), { value: value, oldValue: oldValue, initial: initial });
+function publishChange (emitter, option, value, oldValue, initial = false) {
+  emitter.emit('change', { option, value, oldValue, initial });
+  emitter.emit(`change:${option}`, { value, oldValue, initial });
 }
 
 /**
@@ -634,30 +624,26 @@ function publishChange (emitter, option, value, oldValue, initial) {
  * @param {Object} emitter
  */
 function getInitialValues (element, optionsDef, emitter) {
-  var values = Object.create(null);
-  var bufferedInitials = {};
+  const values = Object.create(null);
+  const bufferedInitials = {};
 
-  var loop = function () {
-    var ref = list[i];
-    var optionName = ref[0];
-    var optionDef = ref[1];
-
-    var datasetValue = element.dataset[optionName];
+  for (const [optionName, optionDef] of entries(optionsDef)) {
+    const datasetValue = element.dataset[optionName];
 
     // Set in HTML
     if (datasetValue != null) {
       try {
         values[optionName] = validateOptionValue(datasetValue, optionDef, true);
       } catch (err) {
-        throw new Error(("Error setting initial option \"" + optionName + "\": " + (err.message)))
+        throw new Error(`Error setting initial option "${optionName}": ${err.message}`)
       }
 
     // Fail on required
     } else if (optionDef && optionDef.required) {
-      requestAnimationFrame(function () {
+      requestAnimationFrame(() => {
         emitter.emit('error', {
           type: 'missing-required',
-          message: ("Missing required option \"" + optionName + "\""),
+          message: `Missing required option "${optionName}"`,
           details: optionName
         });
       });
@@ -672,15 +658,13 @@ function getInitialValues (element, optionsDef, emitter) {
     }
 
     // Saving timeout IDs prevents initial change from accidentally
-    bufferedInitials[optionName] = setTimeout(function () {
+    bufferedInitials[optionName] = setTimeout(() => {
       publishChange(emitter, optionName, values[optionName], null, true);
       delete bufferedInitials[optionName];
     }, 0);
-  };
+  }
 
-  for (var i = 0, list = entries(optionsDef); i < list.length; i += 1) loop();
-
-  return { values: values, bufferedInitials: bufferedInitials }
+  return { values, bufferedInitials }
 }
 
 /**
@@ -690,7 +674,7 @@ function getInitialValues (element, optionsDef, emitter) {
  * @return {string[]}
  */
 function createOptionsAttrList (optionsDef) {
-  return Object.keys(optionsDef).map(function (name) { return ("data-" + (kebab(name))); })
+  return Object.keys(optionsDef).map(name => `data-${kebab(name)}`)
 }
 
 /**
@@ -703,17 +687,13 @@ function createOptionsAttrList (optionsDef) {
  * @return {Object}
  */
 function createOptionsInterface (element, optionsDef, values, emitter) {
-  var options = Object.create(null);
-  var loop = function () {
-    var ref = list[i];
-    var optionName = ref[0];
-    var optionDef = ref[1];
-
+  const options = Object.create(null);
+  for (const [optionName, optionDef] of entries(optionsDef)) {
     Object.defineProperty(options, optionName, {
-      get: function () { return values[optionName]; },
-      set: function set (value) {
+      get: () => values[optionName],
+      set (value) {
         try {
-          var serializedValue = validateOptionValue(value, optionDef, false);
+          const serializedValue = validateOptionValue(value, optionDef, false);
 
           if (typeof serializedValue === 'string') {
             element.dataset[optionName] = serializedValue;
@@ -727,16 +707,14 @@ function createOptionsInterface (element, optionsDef, values, emitter) {
             type: 'invalid-value-js',
             details: {
               option: optionName,
-              value: value
+              value
             },
-            message: ("Error setting option \"" + optionName + "\": " + (err.message))
+            message: `Error setting option "${optionName}": ${err.message}`
           });
         }
       }
     });
-  };
-
-  for (var i = 0, list = entries(optionsDef); i < list.length; i += 1) loop();
+  }
   return options
 }
 
@@ -750,10 +728,8 @@ function createOptionsInterface (element, optionsDef, values, emitter) {
  */
 function observeAttributes (element, attributes, callback) {
   // create an observer instance
-  var observer = new MutationObserver(function (records) {
-    for (var i = 0, list = records; i < list.length; i += 1) {
-      var record = list[i];
-
+  const observer = new MutationObserver(records => {
+    for (const record of records) {
       if (record.type === 'attributes') {
         callback(record.attributeName.slice(5), record.oldValue);
       }
@@ -778,16 +754,16 @@ function observeAttributes (element, attributes, callback) {
  * @param {Object} emitter
  */
 function createMutationHandler (element, optionsDef, values, emitter) {
-  return function (optionAttr, oldSerializedValue) {
-    var optionName = camel(optionAttr);
-    var def = optionsDef[optionName];
+  return (optionAttr, oldSerializedValue) => {
+    const optionName = camel(optionAttr);
+    const def = optionsDef[optionName];
 
-    var newSerializedValue = element.dataset[optionName];
-    if (newSerializedValue === oldSerializedValue) { return }
+    const newSerializedValue = element.dataset[optionName];
+    if (newSerializedValue === oldSerializedValue) return
 
     try {
-      var newUnserializedValue = validateOptionValue(newSerializedValue, def, true);
-      var oldUnserializedValue = validateOptionValue(oldSerializedValue, def, true);
+      const newUnserializedValue = validateOptionValue(newSerializedValue, def, true);
+      const oldUnserializedValue = validateOptionValue(oldSerializedValue, def, true);
 
       values[optionName] = newUnserializedValue;
 
@@ -799,7 +775,7 @@ function createMutationHandler (element, optionsDef, values, emitter) {
           option: optionName,
           value: newSerializedValue
         },
-        message: ("Error setting option \"" + optionName + "\" via HTML: " + (err.message))
+        message: `Error setting option "${optionName}" via HTML: ${err.message}`
       });
     }
   }
@@ -827,7 +803,7 @@ function createAttributeObserver (element, optionsDef, values, emitter) {
  * @param {String|Element|Element[]|NodeList|HTMLCollection} constraint
  */
 function validateElementConstraint (constraint) {
-  var elements = null;
+  let elements = null;
   if (typeof constraint === 'string') {
     elements = constraint;
   } else if (constraint instanceof Element) {
@@ -838,7 +814,7 @@ function validateElementConstraint (constraint) {
     }
 
     if (Array.isArray(constraint)) {
-      if (constraint.every(function (node) { return node instanceof Element; })) {
+      if (constraint.every(node => node instanceof Element)) {
         elements = constraint;
       } else {
         elements = null;
@@ -862,35 +838,31 @@ function validateElementConstraint (constraint) {
  */
 function createElementBasedApi (element, optionsDef, parentEmitter) {
   // Element-based event emitter
-  var localEmitter = mitt();
+  const localEmitter = mitt();
 
   // Delegate events to parent emitter
-  localEmitter.on('*', function (type, evt) {
-    parentEmitter.emit(type, extend({ element: element, elementApi: elementApi }, evt));
+  localEmitter.on('*', (type, evt) => {
+    parentEmitter.emit(type, extend({ element, elementApi }, evt));
   });
 
   // Set initial values
-  var ref = getInitialValues(element, optionsDef, localEmitter);
-  var values = ref.values;
-  var bufferedInitials = ref.bufferedInitials;
+  const { values, bufferedInitials } = getInitialValues(element, optionsDef, localEmitter);
 
   // Make sure to clear out buffered initials
-  var loop = function ( option ) {
-    localEmitter.once(("change:" + option), function () {
+  for (const option in bufferedInitials) {
+    localEmitter.once(`change:${option}`, () => {
       clearTimeout(bufferedInitials[option]);
       delete bufferedInitials[option];
     });
-  };
-
-  for (var option in bufferedInitials) loop( option );
+  }
 
   // Set up the MutationObserver
-  var attributeObserver = createAttributeObserver(element, optionsDef, values, localEmitter);
+  const attributeObserver = createAttributeObserver(element, optionsDef, values, localEmitter);
 
   // Set up the `options` interface
-  var optionsInterface = createOptionsInterface(element, optionsDef, values, localEmitter);
+  const optionsInterface = createOptionsInterface(element, optionsDef, values, localEmitter);
 
-  var elementApi = {
+  const elementApi = {
     options: optionsInterface,
 
     /**
@@ -899,7 +871,7 @@ function createElementBasedApi (element, optionsDef, parentEmitter) {
      * @param {String} evt
      * @param {Function} listener
      */
-    on: function on (evt, listener) {
+    on (evt, listener) {
       localEmitter.on(evt, listener);
       return this
     },
@@ -910,7 +882,7 @@ function createElementBasedApi (element, optionsDef, parentEmitter) {
      * @param {String} evt
      * @param {Function} listener
      */
-    once: function once (evt, listener) {
+    once (evt, listener) {
       localEmitter.once(evt, listener);
       return this
     },
@@ -921,7 +893,7 @@ function createElementBasedApi (element, optionsDef, parentEmitter) {
      * @param {String} evt
      * @param {Function} listener
      */
-    off: function off (evt, listener) {
+    off (evt, listener) {
       localEmitter.off(evt, listener);
       return this
     },
@@ -929,7 +901,7 @@ function createElementBasedApi (element, optionsDef, parentEmitter) {
     /**
      * Destroy the attribute observer
      */
-    destroy: function destroy () {
+    destroy () {
       attributeObserver.disconnect();
       localEmitter.clear();
     }
@@ -947,43 +919,38 @@ function createElementBasedApi (element, optionsDef, parentEmitter) {
 function htmlApi (optionsDef) {
   validateOptionsDefinition(optionsDef);
 
-  return function (constraint) {
-    var elements = validateElementConstraint(constraint);
-    var observableSelector = typeof elements === 'string' && elements;
-    if (observableSelector) { elements = toArray(document.querySelectorAll(elements)); }
+  return constraint => {
+    let elements = validateElementConstraint(constraint);
+    const observableSelector = typeof elements === 'string' && elements;
+    if (observableSelector) elements = toArray(document.querySelectorAll(elements));
 
     // Set up a list of element APIs
-    var elementApis = new Map$1();
+    const elementApis = new Map$1();
 
     // Set up the event emitter
-    var emitter = mitt();
+    const emitter = mitt();
 
     // Register a MutationObserver
-    var elementObserver;
+    let elementObserver;
     if (observableSelector) {
-      elementObserver = new MutationObserver(function (mutations) {
-        for (var i = 0, list = mutations; i < list.length; i += 1) {
-          var mutation = list[i];
-
+      elementObserver = new MutationObserver(mutations => {
+        for (const mutation of mutations) {
           if (mutation.type === 'childList') {
-            var newNodes = toArray(mutation.addedNodes)
-              .filter(function (node) { return node instanceof Element &&
+            const newNodes = toArray(mutation.addedNodes)
+              .filter(node =>
+                node instanceof Element &&
                 matches(node, observableSelector) &&
-                !elementApis.has(node); }
+                !elementApis.has(node)
               );
 
-            for (var i$1 = 0, list$1 = newNodes; i$1 < list$1.length; i$1 += 1) {
-              var element = list$1[i$1];
-
-              var elementApi = createElementBasedApi(element, optionsDef, emitter);
+            for (const element of newNodes) {
+              const elementApi = createElementBasedApi(element, optionsDef, emitter);
               elementApis.set(element, elementApi);
-              emitter.emit('newElement', { element: element, elementApi: elementApi });
+              emitter.emit('newElement', { element, elementApi });
             }
 
-            for (var i$2 = 0, list$2 = toArray(mutation.removedNodes); i$2 < list$2.length; i$2 += 1) {
-              var removedNode = list$2[i$2];
-
-              if (!(removedNode instanceof Element)) { continue }
+            for (const removedNode of toArray(mutation.removedNodes)) {
+              if (!(removedNode instanceof Element)) continue
               if (elementApis.has(removedNode)) {
                 elementApis.get(removedNode).destroy();
                 elementApis.delete(removedNode);
@@ -999,17 +966,13 @@ function htmlApi (optionsDef) {
       });
     }
 
-    var loop = function () {
-      var element = list[i];
-
-      var elementApi = createElementBasedApi(element, optionsDef, emitter);
+    for (const element of elements) {
+      const elementApi = createElementBasedApi(element, optionsDef, emitter);
       elementApis.set(element, elementApi);
       setTimeout(function () {
-        emitter.emit('newElement', { element: element, elementApi: elementApi });
+        emitter.emit('newElement', { element, elementApi });
       }, 0);
-    };
-
-    for (var i = 0, list = elements; i < list.length; i += 1) loop();
+    }
 
     return {
       /**
@@ -1024,8 +987,8 @@ function htmlApi (optionsDef) {
        *
        * @param {Element|String} constraint
        */
-      for: function for$1 (constraint) {
-        var element;
+      for (constraint) {
+        let element;
         if (constraint instanceof Element) {
           element = constraint;
         } else if (typeof constraint === 'string') {
@@ -1033,8 +996,8 @@ function htmlApi (optionsDef) {
         } else {
           throw new Error('Constraint must either be an Element or a selector string')
         }
-        if (!element) { throw new Error('No element found for the given selector') }
-        if (!elementApis.has(element)) { throw new Error('The given element does not have your API attached') }
+        if (!element) throw new Error('No element found for the given selector')
+        if (!elementApis.has(element)) throw new Error('The given element does not have your API attached')
 
         return elementApis.get(element)
       },
@@ -1045,7 +1008,7 @@ function htmlApi (optionsDef) {
        * @param {String} evt
        * @param {Function} listener
        */
-      on: function on (evt, listener) {
+      on (evt, listener) {
         emitter.on(evt, listener);
         return this
       },
@@ -1056,7 +1019,7 @@ function htmlApi (optionsDef) {
        * @param {String} evt
        * @param {Function} listener
        */
-      once: function once (evt, listener) {
+      once (evt, listener) {
         emitter.once(evt, listener);
         return this
       },
@@ -1067,7 +1030,7 @@ function htmlApi (optionsDef) {
        * @param {String} evt
        * @param {Function} listener
        */
-      off: function off (evt, listener) {
+      off (evt, listener) {
         emitter.off(evt, listener);
         return this
       },
@@ -1075,12 +1038,10 @@ function htmlApi (optionsDef) {
       /**
        * Destroys the API, in particular disconnecting the MutationObservers
        */
-      destroy: function destroy () {
-        if (elementObserver) { elementObserver.disconnect(); }
+      destroy () {
+        if (elementObserver) elementObserver.disconnect();
         emitter.clear();
-        for (var i = 0, list = toArray(elementApis.values()); i < list.length; i += 1) {
-          var elementApi = list[i];
-
+        for (const elementApi of toArray(elementApis.values())) {
           elementApi.destroy();
         }
       }
@@ -1091,16 +1052,11 @@ function htmlApi (optionsDef) {
 /**
  * Define Enum constraint
  */
-htmlApi.Enum = function () {
-  var values = [], len = arguments.length;
-  while ( len-- ) values[ len ] = arguments[ len ];
-
-  return ({
-  validate: function (value) { return typeof value === 'string' && has(values, value); },
-  serialize: function (value) { return value; },
-  unserialize: function (value) { return value; }
+htmlApi.Enum = (...values) => ({
+  validate: value => typeof value === 'string' && has(values, value),
+  serialize: value => value,
+  unserialize: value => value
 });
-};
 
 /**
  * Generate a number constraint
@@ -1109,46 +1065,40 @@ htmlApi.Enum = function () {
  * @param {Number} max
  * @param {Boolean} float
  */
-var numGen = function (min, max, float) {
-  if ( min === void 0 ) min = -Infinity;
-  if ( max === void 0 ) max = Infinity;
-  if ( float === void 0 ) float = true;
-
-  return ({
-  validate: function (value) {
-    if (typeof value !== 'number' || !isFinite(value)) { return false }
+const numGen = (min = -Infinity, max = Infinity, float = true) => ({
+  validate: value => {
+    if (typeof value !== 'number' || !isFinite(value)) return false
     if (!float) {
       if (Number.isInteger) {
-        if (!Number.isInteger(value)) { return false }
+        if (!Number.isInteger(value)) return false
       } else {
-        if (Math.floor(value) !== value) { return false }
+        if (Math.floor(value) !== value) return false
       }
     }
     return value >= min && value <= max
   },
-  serialize: function (value) { return String(value); },
-  unserialize: function (value) { return +value; }
+  serialize: value => String(value),
+  unserialize: value => +value
 });
-};
 
 /**
  * Define Integer constraint
  */
 htmlApi.Integer = extend(numGen(-Infinity, Infinity, false), {
-  min: function (min) { return extend(numGen(min, Infinity, false), {
-    max: function (max) { return numGen(min, max, false); }
-  }); },
-  max: function (max) { return numGen(-Infinity, max, false); }
+  min: min => extend(numGen(min, Infinity, false), {
+    max: max => numGen(min, max, false)
+  }),
+  max: max => numGen(-Infinity, max, false)
 });
 
 /**
  * Define Float constraint
  */
 htmlApi.Float = extend(numGen(-Infinity, Infinity), {
-  min: function (min) { return extend(numGen(min, Infinity), {
-    max: function (max) { return numGen(min, max); }
-  }); },
-  max: function (max) { return numGen(-Infinity, max); }
+  min: min => extend(numGen(min, Infinity), {
+    max: max => numGen(min, max)
+  }),
+  max: max => numGen(-Infinity, max)
 });
 
 module.exports = htmlApi;
