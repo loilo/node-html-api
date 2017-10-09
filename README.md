@@ -345,7 +345,7 @@ Instead of `Type`, you could use one of the following:
 
 #### Union constraints
 
-You can use an array of multiple type constraints to make option valid if they match *any* of them.
+You can use an array of multiple type constraints to make an option valid if it matches *any* of them.
 
 If you, for example, would like to have an option for your widget that defines the `framerate` at which animations will be performed, you could do it like this:
 
@@ -603,40 +603,38 @@ As with the `change` events, all `error` events will be passed up to the `api` a
 To get a complete picture of what's possible with the `htmlApi` function, here's its signature:
 
 ```javascript
-htmlApi(opts: OptionsDefinition|TypeConstraint): ApiFactory
+htmlApi(options: { [option: string]: OptionDefinition|TypeConstraint }): ApiFactory
 ```
 
 where
 
-* `OptionsDefinition` is a plain object matching the following interface:
+* An `OptionDefinition` is a plain object matching the following interface:
 
   ```javascript
-  interface OptionsDefinition {
+  interface OptionDefinition {
     /*
-     * A type constraint as defined above.
+     * A type constraint as defined below.
      * This *must* be set, otherwise the package will not know how
      * to serialize and unserialize option values.
      */
-    type: TypeConstraint,
+    type: TypeConstraint
 
     /*
      * Tells if the data attribute belonging to this option must
      * be set. If not set or set to `false`, the `default` option
      * will be used.
      */
-    required?: boolean,
+    required?: boolean
 
     /*
      * A default value, applying when the according data-* attribute
      * is not set. If set, the option must not be `required`.
-     * It's mandatory if option is not `required` and the `type` is
-     * not an array including `null`.
      */
     default?: any
   }
   ```
 
-* `TypeConstraint` is either
+* A `TypeConstraint` is either
   * one of the following constraint shorthands:
     * the `Boolean` constructor, allowing boolean values or
     * the `Number` constructor, allowing numeric values or
@@ -688,7 +686,7 @@ where
     The formal way to describe this would be:
 
     ```javascript
-    type UnionType = (
+    type UnionType = Array<
       typeof Boolean |
       typeof Number |
       typeof String |
@@ -698,12 +696,12 @@ where
       typeof Function |
       null |
       Constraint<any>
-    )[]
+    >
     ```
 
-    (`htmlApi.Enum`, `htmlApi.Integer` and `htmlApi.Float` are not in the type definition since they are just `Constraint` objects.)
+    > **Note:** `htmlApi.Enum`, `htmlApi.Integer` and `htmlApi.Float` are not listed in the `UnionType` definition since they are just `Constraint` objects.
 
-* `ApiFactory` is a function which takes elements and returns an `Api` object
+* An `ApiFactory` is a function which takes elements and returns an `Api` object
 
   ```javascript
   interface ApiFactory {
@@ -711,7 +709,7 @@ where
   }
   ```
 
-* `Api` is a plain object of the following structure:
+* An `Api` is a plain object of the following structure:
 
   ```javascript
   interface Api {
@@ -788,22 +786,22 @@ where
     /*
      * An object with all defined options as properties
      */
-    options: { [s: string]: any }
+    options: { [option: string]: any }
 
     /*
      * Adds a listener to the `change` or `error` event
      */
     on (
       event: "change",
-      listener: (event: OptionChangeEvent) => any
+      listener: (event: OptionChangeEvent & ElementRelatedEvent) => any
     ): this
     on (
       event: "change:[optionName]",
-      listener: (event: ConcreteOptionChangeEvent) => any
+      listener: (event: ConcreteOptionChangeEvent & ElementRelatedEvent) => any
     ): this
     on (
       event: "error",
-      listener: (event: ErrorEvent) => any
+      listener: (event: ErrorEvent & ElementRelatedEvent) => any
     ): this
 
     /*
@@ -811,15 +809,15 @@ where
      */
     once (
       event: "change",
-      listener: (event: OptionChangeEvent) => any
+      listener: (event: OptionChangeEvent & ElementRelatedEvent) => any
     ): this
     once (
       event: "change:[optionName]",
-      listener: (event: ConcreteOptionChangeEvent) => any
+      listener: (event: ConcreteOptionChangeEvent & ElementRelatedEvent) => any
     ): this
     once (
       event: "error",
-      listener: (event: ErrorEvent) => any
+      listener: (event: ErrorEvent & ElementRelatedEvent) => any
     ): this
 
     /*
@@ -827,15 +825,15 @@ where
      */
     off (
       event: "change",
-      listener: (event: OptionChangeEvent) => any
+      listener: (event: OptionChangeEvent & ElementRelatedEvent) => any
     ): this
     off (
       event: "change:[optionName]",
-      listener: (event: ConcreteOptionChangeEvent) => any
+      listener: (event: ConcreteOptionChangeEvent & ElementRelatedEvent) => any
     ): this
     off (
       event: "error",
-      listener: (event: ErrorEvent) => any
+      listener: (event: ErrorEvent & ElementRelatedEvent) => any
     ): this
 
     /*
