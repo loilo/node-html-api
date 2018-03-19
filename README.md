@@ -1,5 +1,8 @@
 # HTML API
 
+[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+[![npm](https://img.shields.io/npm/v/npm.svg)](https://www.npmjs.com/package/html-api)
+
 This package makes it easy to give your JavaScript-generated widgets a clean, declarative [HTML API](https://www.smashingmagazine.com/2017/02/designing-html-apis/).
 
 It features
@@ -9,8 +12,6 @@ It features
 * decent presets and extensibility for type checking and casting
 * support for all modern browsers down to IE 11
 * reasonably small size: it's 3.8 KB minified & gzipped
-
-[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
 ---
 
@@ -728,15 +729,15 @@ where
      */
     on (
       event: "change",
-      listener: (event: OptionChangeEvent) => any
+      listener: (event: OptionChangeEvent & ElementRelatedEvent) => any
     ): this
     on (
       event: "change:[optionName]",
-      listener: (event: ConcreteOptionChangeEvent) => any
+      listener: (event: ConcreteOptionChangeEvent & ElementRelatedEvent) => any
     ): this
     on (
       event: "error",
-      listener: (event: ErrorEvent) => any
+      listener: (event: ErrorEvent & ElementRelatedEvent) => any
     ): this
 
     /*
@@ -744,15 +745,15 @@ where
      */
     once (
       event: "change",
-      listener: (event: OptionChangeEvent) => any
+      listener: (event: OptionChangeEvent & ElementRelatedEvent) => any
     ): this
     once (
       event: "change:[optionName]",
-      listener: (event: ConcreteOptionChangeEvent) => any
+      listener: (event: ConcreteOptionChangeEvent & ElementRelatedEvent) => any
     ): this
     once (
       event: "error",
-      listener: (event: ErrorEvent) => any
+      listener: (event: ErrorEvent & ElementRelatedEvent) => any
     ): this
 
     /*
@@ -760,15 +761,15 @@ where
      */
     off (
       event: "change",
-      listener: (event: OptionChangeEvent) => any
+      listener: (event: OptionChangeEvent & ElementRelatedEvent) => any
     ): this
     off (
       event: "change:[optionName]",
-      listener: (event: ConcreteOptionChangeEvent) => any
+      listener: (event: ConcreteOptionChangeEvent & ElementRelatedEvent) => any
     ): this
     off (
       event: "error",
-      listener: (event: ErrorEvent) => any
+      listener: (event: ErrorEvent & ElementRelatedEvent) => any
     ): this
 
     /*
@@ -793,15 +794,15 @@ where
      */
     on (
       event: "change",
-      listener: (event: OptionChangeEvent & ElementRelatedEvent) => any
+      listener: (event: OptionChangeEvent) => any
     ): this
     on (
       event: "change:[optionName]",
-      listener: (event: ConcreteOptionChangeEvent & ElementRelatedEvent) => any
+      listener: (event: ConcreteOptionChangeEvent) => any
     ): this
     on (
       event: "error",
-      listener: (event: ErrorEvent & ElementRelatedEvent) => any
+      listener: (event: ErrorEvent) => any
     ): this
 
     /*
@@ -809,15 +810,15 @@ where
      */
     once (
       event: "change",
-      listener: (event: OptionChangeEvent & ElementRelatedEvent) => any
+      listener: (event: OptionChangeEvent) => any
     ): this
     once (
       event: "change:[optionName]",
-      listener: (event: ConcreteOptionChangeEvent & ElementRelatedEvent) => any
+      listener: (event: ConcreteOptionChangeEvent) => any
     ): this
     once (
       event: "error",
-      listener: (event: ErrorEvent & ElementRelatedEvent) => any
+      listener: (event: ErrorEvent) => any
     ): this
 
     /*
@@ -825,15 +826,15 @@ where
      */
     off (
       event: "change",
-      listener: (event: OptionChangeEvent & ElementRelatedEvent) => any
+      listener: (event: OptionChangeEvent) => any
     ): this
     off (
       event: "change:[optionName]",
-      listener: (event: ConcreteOptionChangeEvent & ElementRelatedEvent) => any
+      listener: (event: ConcreteOptionChangeEvent) => any
     ): this
     off (
       event: "error",
-      listener: (event: ErrorEvent & ElementRelatedEvent) => any
+      listener: (event: ErrorEvent) => any
     ): this
 
     /*
