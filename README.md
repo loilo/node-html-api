@@ -1,7 +1,7 @@
 # HTML API
 
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
-[![npm](https://img.shields.io/npm/v/npm.svg)](https://www.npmjs.com/package/html-api)
+[![npm](https://img.shields.io/npm/v/html-api.svg)](https://www.npmjs.com/package/html-api)
 
 This package makes it easy to give your JavaScript-generated widgets a clean, declarative [HTML API](https://www.smashingmagazine.com/2017/02/designing-html-apis/).
 
